@@ -3,12 +3,12 @@
 import React, { useState, FormEvent, ChangeEvent, useEffect } from 'react';
 import { Star, ThumbsUp, ThumbsDown, Meh } from 'lucide-react';
 
-interface FormData {
+/*interface FormData {
   activity: string;
   rating: number;
   feedback: string;
   timestamp: string;
-}
+}*/
 
 const TWISEFeedbackForm = () => {
   const [rating, setRating] = useState<number>(0);
