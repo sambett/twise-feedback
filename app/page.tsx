@@ -2,6 +2,8 @@
 
 import React, { useState, FormEvent, ChangeEvent } from 'react';
 import { Star, ThumbsUp, ThumbsDown, Meh } from 'lucide-react';
+import { ref, push } from "firebase/database";
+import { db } from "./firebase"; // Assurez-vous que le chemin correspond à la localisation de firebase.ts
 
 const challenges = [
   "AI Workshop & Innovation",
@@ -19,29 +21,55 @@ const TWISEFeedbackForm = () => {
   const [activity, setActivity] = useState<string>('');
   const [feedback, setFeedback] = useState<string>('');
   const [sentiment, setSentiment] = useState<string>('');
+  const [serverSentiment, setServerSentiment] = useState<string | null>(null);
 
-  const analyzeSentiment = (text: string): string => {
-    const positiveWords = ['great', 'awesome', 'excellent', 'good', 'love', 'amazing'];
-    const negativeWords = ['bad', 'poor', 'terrible', 'hate', 'worst', 'boring'];
-    
-    const words = text.toLowerCase().split(' ');
-    const positiveCount = words.filter(word => positiveWords.includes(word)).length;
-    const negativeCount = words.filter(word => negativeWords.includes(word)).length;
-    
-    if (positiveCount > negativeCount) return 'POSITIVE';
-    if (negativeCount > positiveCount) return 'NEGATIVE';
-    return 'NEUTRAL';
-  };
-
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log({ activity, rating, feedback, sentiment });
-    // Reset form
-    setRating(0);
-    setActivity('');
-    setFeedback('');
-    setSentiment('');
+  
+    try {
+      // Étape 1 : Envoyer le texte saisi au serveur Flask pour l'analyse de sentiment
+      const response = await fetch('http://127.0.0.1:5000/analyze', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ text: feedback }),
+      });
+  
+      if (response.ok) {
+        const data = await response.json();
+        console.log("Réponse du serveur Flask:", data);
+  
+        // Mettre à jour le sentiment basé sur la réponse du serveur
+        setSentiment(data.dominant_sentiment);
+  
+        // Étape 2 : Préparer les données pour Firebase
+        const feedbackData = {
+          activity,
+          rating,
+          feedback,
+          sentiment: data.dominant_sentiment, // Utiliser le sentiment analysé par Flask
+          timestamp: new Date().toISOString(),
+        };
+  
+        // Étape 3 : Ajouter les données dans Firebase
+        const feedbackRef = ref(db, 'feedback'); // Référence au nœud "feedback"
+        await push(feedbackRef, feedbackData); // Pousser les données avec un nouvel ID unique
+        console.log("Feedback ajouté dans Firebase avec succès:", feedbackData);
+  
+        // Réinitialiser le formulaire après succès
+        setRating(0);
+        setActivity('');
+        setFeedback('');
+        setSentiment('');
+      } else {
+        console.error("Erreur du serveur Flask:", response.statusText);
+      }
+    } catch (error) {
+      console.error("Erreur lors de la soumission des données:", error);
+    }
   };
+  
 
   const renderSentimentIcon = () => {
     switch (sentiment) {
@@ -68,8 +96,8 @@ const TWISEFeedbackForm = () => {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
-            <label className="block text-gray-200">Select  The Activity You Liked The Most !</label>
-            <select 
+            <label className="block text-gray-200">Select The Activity You Liked The Most!</label>
+            <select
               value={activity}
               onChange={(e: ChangeEvent<HTMLSelectElement>) => setActivity(e.target.value)}
               required
@@ -107,7 +135,7 @@ const TWISEFeedbackForm = () => {
                 onChange={(e: ChangeEvent<HTMLTextAreaElement>) => {
                   setFeedback(e.target.value);
                   if (e.target.value.length > 10) {
-                    setSentiment(analyzeSentiment(e.target.value));
+                    setSentiment(e.target.value); // Local sentiment analysis (optional)
                   }
                 }}
                 className="w-full bg-white/10 border border-white/20 text-white rounded-lg p-3 min-h-[100px] focus:outline-none focus:ring-2 focus:ring-violet-500"
@@ -123,13 +151,20 @@ const TWISEFeedbackForm = () => {
             </div>
           </div>
 
-          <button 
+          <button
             type="submit"
             className="w-full bg-gradient-to-r from-blue-500 to-violet-500 hover:from-blue-600 hover:to-violet-600 text-white font-semibold py-3 rounded-lg transition-colors"
           >
             Submit Feedback
           </button>
         </form>
+
+        {serverSentiment && (
+          <div className="mt-6 text-center text-gray-200">
+            <p>Server Sentiment Analysis:</p>
+            <p className="font-bold text-lg">{serverSentiment}</p>
+          </div>
+        )}
       </div>
     </div>
   );
