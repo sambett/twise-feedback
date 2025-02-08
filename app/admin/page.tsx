@@ -1,48 +1,131 @@
-"use client";
+'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Users, Star, TrendingUp, MessageSquare } from 'lucide-react';
 
-const AdminDashboard = () => {
-  const mockData = {
-    activities: [
-      { name: 'AI Workshop & Innovation', participants: 42, avgRating: 4.5, positiveFeedback: 38 },
-      { name: 'Healthcare & Biotech', participants: 35, avgRating: 4.2, positiveFeedback: 30 },
-      { name: 'Environmental Projects', participants: 28, avgRating: 4.7, positiveFeedback: 25 },
-      { name: 'Smart Cities & IoT', participants: 31, avgRating: 4.3, positiveFeedback: 28 },
-      { name: 'Social Impact Research', participants: 25, avgRating: 4.6, positiveFeedback: 22 },
-      { name: 'Quantum Computing Demo', participants: 30, avgRating: 4.4, positiveFeedback: 27 },
-      { name: 'Robotics Lab', participants: 38, avgRating: 4.8, positiveFeedback: 35 },
-      { name: 'VR Research Experience', participants: 33, avgRating: 4.5, positiveFeedback: 29 }
-    ],
-    recentFeedback: [
-      {
-        activity: 'AI Workshop & Innovation',
-        rating: 5,
-        feedback: "Learned a lot about machine learning applications!",
-        sentiment: 'POSITIVE',
-        timestamp: '2024-02-08T14:30:00'
-      },
-      {
-        activity: 'Robotics Lab',
-        rating: 5,
-        feedback: "Amazing hands-on experience with cutting-edge robots",
-        sentiment: 'POSITIVE',
-        timestamp: '2024-02-08T14:25:00'
+interface FeedbackItem {
+  id: string;
+  activity: string;
+  rating: number;
+  feedback: string;
+  sentiment: 'POSITIVE' | 'NEGATIVE' | 'NEUTRAL';
+  timestamp: string;
+}
+
+interface ActivityStats {
+  name: string;
+  participants: number;
+  totalRating: number;
+  positiveFeedback: number;
+  avgRating?: number;
+}
+
+interface DashboardStats {
+  totalParticipants: number;
+  averageRating: number;
+  sentimentScore: number;
+  totalFeedback: number;
+}
+
+interface SentimentCount {
+  [key: string]: number;
+}
+
+export default function AdminDashboard() {
+  const [feedbackData, setFeedbackData] = useState<FeedbackItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await fetch('/api/get-feedback');
+        if (!response.ok) throw new Error('Failed to fetch data');
+        const data = await response.json();
+        setFeedbackData(data);
+        setError('');
+      } catch (err) {
+        setError('Failed to load feedback data');
+        console.error('Error:', err);
+      } finally {
+        setLoading(false);
       }
-    ],
-    stats: {
-      totalParticipants: 291,
-      averageRating: 4.4,
-      sentimentScore: 87,
-      totalFeedback: 260
-    }
+    };
+
+    fetchData();
+    const interval = setInterval(fetchData, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Process data for stats
+  const stats: DashboardStats = {
+    totalParticipants: feedbackData.length,
+    averageRating: feedbackData.reduce((acc, curr) => acc + curr.rating, 0) / feedbackData.length || 0,
+    sentimentScore: (feedbackData.filter(item => item.sentiment === 'POSITIVE').length / feedbackData.length) * 100 || 0,
+    totalFeedback: feedbackData.length
   };
 
+  // Process activities data
+  const activitiesData = feedbackData.reduce<Record<string, ActivityStats>>((acc, curr) => {
+    if (!acc[curr.activity]) {
+      acc[curr.activity] = {
+        name: curr.activity,
+        participants: 0,
+        totalRating: 0,
+        positiveFeedback: 0
+      };
+    }
+    acc[curr.activity].participants += 1;
+    acc[curr.activity].totalRating += curr.rating;
+    if (curr.sentiment === 'POSITIVE') {
+      acc[curr.activity].positiveFeedback += 1;
+    }
+    return acc;
+  }, {});
+
+  const activities = Object.values(activitiesData).map(activity => ({
+    ...activity,
+    avgRating: activity.totalRating / activity.participants
+  }));
+
+  // Calculate sentiment distribution
+  const sentimentCounts = feedbackData.reduce<SentimentCount>((acc, curr) => {
+    acc[curr.sentiment] = (acc[curr.sentiment] || 0) + 1;
+    return acc;
+  }, {});
+
+  const sentimentData = [
+    { name: 'Positive', value: sentimentCounts['POSITIVE'] || 0 },
+    { name: 'Neutral', value: sentimentCounts['NEUTRAL'] || 0 },
+    { name: 'Negative', value: sentimentCounts['NEGATIVE'] || 0 }
+  ];
+
+  // Get recent feedback (last 5 entries)
+  const recentFeedback = [...feedbackData]
+    .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+    .slice(0, 5);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-6 flex items-center justify-center">
+        <div className="text-white text-xl">Loading dashboard...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-6 flex items-center justify-center">
+        <div className="text-red-400 text-xl">{error}</div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-[conic-gradient(at_top_right,_var(--tw-gradient-stops))] from-slate-900 via-purple-900 to-slate-900 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-6">
       <div className="max-w-7xl mx-auto space-y-6">
+        {/* Header */}
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-4xl font-bold text-white tracking-tight">
@@ -52,78 +135,69 @@ const AdminDashboard = () => {
             </h1>
             <p className="text-gray-400 mt-1">Real-time feedback analysis</p>
           </div>
-          <div className="flex gap-2">
-            <div className="px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-lg text-white font-medium shadow-lg shadow-indigo-500/20">
-              Live
-            </div>
+          <div className="px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-lg text-white font-medium">
+            Live
           </div>
         </div>
 
-        {/* Quick Stats */}
+        {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-lg shadow-xl hover:shadow-indigo-500/10 transition-all duration-300 p-6">
-            <div className="flex flex-row items-center justify-between pb-2">
+          <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-lg p-6">
+            <div className="flex items-center justify-between pb-2">
               <h3 className="text-sm font-medium text-gray-200">Total Participants</h3>
               <Users className="h-4 w-4 text-indigo-400" />
             </div>
-            <div>
-              <div className="text-2xl font-bold text-white">{mockData.stats.totalParticipants}</div>
-              <p className="text-xs text-gray-400">Across all activities</p>
-            </div>
+            <div className="text-2xl font-bold text-white">{stats.totalParticipants}</div>
+            <p className="text-xs text-gray-400">Across all activities</p>
           </div>
 
-          <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-lg shadow-xl hover:shadow-purple-500/10 transition-all duration-300 p-6">
-            <div className="flex flex-row items-center justify-between pb-2">
+          <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-lg p-6">
+            <div className="flex items-center justify-between pb-2">
               <h3 className="text-sm font-medium text-gray-200">Average Rating</h3>
               <Star className="h-4 w-4 text-purple-400" />
             </div>
-            <div>
-              <div className="text-2xl font-bold text-white">{mockData.stats.averageRating.toFixed(1)}</div>
-              <p className="text-xs text-gray-400">From all feedback</p>
-            </div>
+            <div className="text-2xl font-bold text-white">{stats.averageRating.toFixed(1)}</div>
+            <p className="text-xs text-gray-400">From all feedback</p>
           </div>
 
-          <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-lg shadow-xl hover:shadow-pink-500/10 transition-all duration-300 p-6">
-            <div className="flex flex-row items-center justify-between pb-2">
+          <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-lg p-6">
+            <div className="flex items-center justify-between pb-2">
               <h3 className="text-sm font-medium text-gray-200">Sentiment Score</h3>
               <TrendingUp className="h-4 w-4 text-pink-400" />
             </div>
-            <div>
-              <div className="text-2xl font-bold text-white">{mockData.stats.sentimentScore}%</div>
-              <p className="text-xs text-gray-400">Positive feedback</p>
-            </div>
+            <div className="text-2xl font-bold text-white">{Math.round(stats.sentimentScore)}%</div>
+            <p className="text-xs text-gray-400">Positive feedback</p>
           </div>
 
-          <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-lg shadow-xl hover:shadow-blue-500/10 transition-all duration-300 p-6">
-            <div className="flex flex-row items-center justify-between pb-2">
+          <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-lg p-6">
+            <div className="flex items-center justify-between pb-2">
               <h3 className="text-sm font-medium text-gray-200">Total Feedback</h3>
               <MessageSquare className="h-4 w-4 text-blue-400" />
             </div>
-            <div>
-              <div className="text-2xl font-bold text-white">{mockData.stats.totalFeedback}</div>
-              <p className="text-xs text-gray-400">Responses collected</p>
-            </div>
+            <div className="text-2xl font-bold text-white">{stats.totalFeedback}</div>
+            <p className="text-xs text-gray-400">Responses collected</p>
           </div>
         </div>
 
         {/* Charts */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-lg shadow-xl p-6">
+          {/* Activity Ratings Chart */}
+          <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-lg p-6">
             <h3 className="text-gray-200 text-xl font-semibold mb-4">Activity Ratings</h3>
             <div className="h-96">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={mockData.activities}>
+                <BarChart data={activities}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                   <XAxis 
                     dataKey="name" 
                     stroke="#9CA3AF" 
-                    angle={-45}
-                    textAnchor="end"
-                    height={100}
+                    angle={-45} 
+                    textAnchor="end" 
+                    height={100} 
                     interval={0}
                   />
                   <YAxis stroke="#9CA3AF" />
-                  <Tooltip
+                  <Tooltip 
                     contentStyle={{ backgroundColor: '#1F2937', border: 'none', borderRadius: '8px' }}
                     labelStyle={{ color: '#E5E7EB' }}
                   />
@@ -139,17 +213,14 @@ const AdminDashboard = () => {
             </div>
           </div>
 
-          <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-lg shadow-xl p-6">
+          {/* Sentiment Distribution Chart */}
+          <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-lg p-6">
             <h3 className="text-gray-200 text-xl font-semibold mb-4">Sentiment Distribution</h3>
             <div className="h-96">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={[
-                      { name: 'Positive', value: 75 },
-                      { name: 'Neutral', value: 15 },
-                      { name: 'Negative', value: 10 }
-                    ]}
+                    data={sentimentData}
                     cx="50%"
                     cy="50%"
                     innerRadius={80}
@@ -172,8 +243,8 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-        {/* Recent Feedback */}
-        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-lg shadow-xl p-6">
+        {/* Recent Feedback Table */}
+        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-lg p-6">
           <h3 className="text-gray-200 text-xl font-semibold mb-4">Recent Feedback</h3>
           <div className="relative overflow-x-auto rounded-lg">
             <table className="w-full text-sm text-left text-gray-300">
@@ -187,8 +258,8 @@ const AdminDashboard = () => {
                 </tr>
               </thead>
               <tbody>
-                {mockData.recentFeedback.map((item, index) => (
-                  <tr key={index} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+                {recentFeedback.map((item) => (
+                  <tr key={item.id} className="border-b border-white/5 hover:bg-white/5">
                     <td className="px-6 py-4">{item.activity}</td>
                     <td className="px-6 py-4">
                       <div className="flex items-center">
@@ -218,6 +289,4 @@ const AdminDashboard = () => {
       </div>
     </div>
   );
-};
-
-export default AdminDashboard;
+}
