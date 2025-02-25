@@ -7,14 +7,6 @@ const nextConfig = {
     images: {
       domains: ['api.qrserver.com'],
     },
-    async rewrites() {
-      return [
-        {
-          source: '/api/analyze',
-          destination: '/api/analyze.py',
-        },
-      ];
-    },
   };
   
   export default nextConfig;
