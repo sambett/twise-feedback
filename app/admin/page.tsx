@@ -9,7 +9,7 @@ interface FeedbackItem {
   activity: string;
   rating: number;
   feedback: string;
-  sentiment: 'POSITIVE' | 'NEGATIVE' | 'NEUTRAL';
+  sentiment: 'pos' | 'neg' | 'neu' | 'POSITIVE' | 'NEGATIVE' | 'NEUTRAL';
   timestamp: string;
 }
 
@@ -58,16 +58,27 @@ export default function AdminDashboard() {
     return () => clearInterval(interval);
   }, []);
 
+  const normalizeDataToPositiveNeutralNegative = (data: FeedbackItem[]) => {
+    return data.map(item => ({
+      ...item,
+      sentiment: 
+        item.sentiment === 'pos' || item.sentiment === 'POSITIVE' ? 'POSITIVE' :
+        item.sentiment === 'neg' || item.sentiment === 'NEGATIVE' ? 'NEGATIVE' : 'NEUTRAL'
+    }));
+  };
+
+  const normalizedData = normalizeDataToPositiveNeutralNegative(feedbackData);
+
   // Process data for stats
   const stats: DashboardStats = {
-    totalParticipants: feedbackData.length,
-    averageRating: feedbackData.reduce((acc, curr) => acc + curr.rating, 0) / feedbackData.length || 0,
-    sentimentScore: (feedbackData.filter(item => item.sentiment === 'POSITIVE').length / feedbackData.length) * 100 || 0,
-    totalFeedback: feedbackData.length
+    totalParticipants: normalizedData.length,
+    averageRating: normalizedData.reduce((acc, curr) => acc + curr.rating, 0) / normalizedData.length || 0,
+    sentimentScore: (normalizedData.filter(item => item.sentiment === 'POSITIVE').length / normalizedData.length) * 100 || 0,
+    totalFeedback: normalizedData.length
   };
 
   // Process activities data
-  const activitiesData = feedbackData.reduce<Record<string, ActivityStats>>((acc, curr) => {
+  const activitiesData = normalizedData.reduce<Record<string, ActivityStats>>((acc, curr) => {
     if (!acc[curr.activity]) {
       acc[curr.activity] = {
         name: curr.activity,
@@ -90,7 +101,7 @@ export default function AdminDashboard() {
   }));
 
   // Calculate sentiment distribution
-  const sentimentCounts = feedbackData.reduce<SentimentCount>((acc, curr) => {
+  const sentimentCounts = normalizedData.reduce<SentimentCount>((acc, curr) => {
     acc[curr.sentiment] = (acc[curr.sentiment] || 0) + 1;
     return acc;
   }, {});
@@ -102,7 +113,7 @@ export default function AdminDashboard() {
   ];
 
   // Get recent feedback (last 5 entries)
-  const recentFeedback = [...feedbackData]
+  const recentFeedback = [...normalizedData]
     .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
     .slice(0, 5);
 
