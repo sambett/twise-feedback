@@ -4,9 +4,9 @@ A real-time feedback collection and analysis system for TWISE Night research act
 
 ## 🌐 Live Demo
 
-- [Feedback Form](https://twise-feedback-xwyu.vercel.app/) - For participants to submit feedback
-- [Admin Dashboard](https://twise-feedback-z8g2.vercel.app/admin) - Real-time analytics and feedback monitoring
-- [QR Code Generator](https://twise-feedback-xwyu.vercel.app/qr) - Generate QR codes for easy access
+- [Feedback Form](https://twise-feedback.vercel.app/) - For participants to submit feedback
+- [Admin Dashboard](https://twise-feedback.vercel.app/admin) - Real-time analytics and feedback monitoring
+- [QR Code Generator](https://twise-feedback.vercel.app/qr) - Generate QR codes for easy access
 
 ## ✨ Features
 
