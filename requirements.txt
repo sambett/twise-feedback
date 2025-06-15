@@ -1,0 +1,2 @@
+# Required for Vercel Python serverless functions
+vaderSentiment==3.3.2
