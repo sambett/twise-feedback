@@ -1,21 +1,34 @@
 "use client";
 
-import React, { useState, useEffect, FormEvent, ChangeEvent } from 'react';
+import React, { useState, useEffect, FormEvent, ChangeEvent, use } from 'react';
 import { Star, ThumbsUp, ThumbsDown, Meh } from 'lucide-react';
 import { ref, push, onValue, off } from "firebase/database";
 import { db } from "../../firebase";
 import { eventConfigs, EventConfig } from '../../lib/eventConfigs';
 
 interface EventPageProps {
-  params: {
+  params: Promise<{
     eventId: string;
-  };
+  }>;
 }
 
 const UniversalFeedbackForm = ({ params }: EventPageProps) => {
+  // Unwrap the params Promise using React.use()
+  const resolvedParams = use(params);
+  
+  // ALL HOOKS MUST BE DECLARED AT THE TOP - BEFORE ANY CONDITIONAL LOGIC
   const [eventConfig, setEventConfig] = useState<EventConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const [mounted, setMounted] = useState(false);
+  
+  // Form state hooks - declared here to maintain consistent hook order
+  const [rating, setRating] = useState<number>(0);
+  const [activity, setActivity] = useState<string>('');
+  const [feedback, setFeedback] = useState<string>('');
+  const [sentiment, setSentiment] = useState<string>('');
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [submitSuccess, setSubmitSuccess] = useState<boolean | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string>('');
   
   // Client-side mounting check to prevent hydration issues
   useEffect(() => {
@@ -27,7 +40,7 @@ const UniversalFeedbackForm = ({ params }: EventPageProps) => {
     if (!mounted) return;
     
     // First check static events
-    const staticEvent = eventConfigs[params.eventId];
+    const staticEvent = eventConfigs[resolvedParams.eventId];
     if (staticEvent) {
       setEventConfig(staticEvent);
       setLoading(false);
@@ -43,7 +56,7 @@ const UniversalFeedbackForm = ({ params }: EventPageProps) => {
           firebaseId
         }));
         
-        const foundEvent = firebaseEvents.find(event => event.id === params.eventId);
+        const foundEvent = firebaseEvents.find(event => event.id === resolvedParams.eventId);
         if (foundEvent) {
           setEventConfig(foundEvent);
         }
@@ -55,42 +68,7 @@ const UniversalFeedbackForm = ({ params }: EventPageProps) => {
     });
     
     return () => off(eventsRef);
-  }, [params.eventId, mounted]);
-  
-  // Prevent rendering until mounted to avoid hydration issues
-  if (!mounted || loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-blue-900 p-4 flex items-center justify-center">
-        <div className="text-white text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
-          <p>Loading event...</p>
-        </div>
-      </div>
-    );
-  }
-  
-  // Fallback if event not found
-  if (!eventConfig) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-blue-900 p-4 flex items-center justify-center">
-        <div className="text-white text-center">
-          <h1 className="text-2xl font-bold mb-4">Event Not Found</h1>
-          <p className="text-gray-300">The event you're looking for doesn't exist.</p>
-          <a href="/admin" className="mt-4 inline-block bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-lg">
-            View All Events
-          </a>
-        </div>
-      </div>
-    );
-  }
-
-  const [rating, setRating] = useState<number>(0);
-  const [activity, setActivity] = useState<string>('');
-  const [feedback, setFeedback] = useState<string>('');
-  const [sentiment, setSentiment] = useState<string>('');
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-  const [submitSuccess, setSubmitSuccess] = useState<boolean | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string>('');
+  }, [resolvedParams.eventId, mounted]);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -120,10 +98,10 @@ const UniversalFeedbackForm = ({ params }: EventPageProps) => {
           feedback,
           sentiment: dominantSentiment,
           timestamp: new Date().toISOString(),
-          eventId: params.eventId
+          eventId: resolvedParams.eventId
         };
   
-        const feedbackRef = ref(db, `events/${params.eventId}/feedback`);
+        const feedbackRef = ref(db, `events/${resolvedParams.eventId}/feedback`);
         await push(feedbackRef, feedbackData);
   
         // Reset form
@@ -160,6 +138,33 @@ const UniversalFeedbackForm = ({ params }: EventPageProps) => {
         return null;
     }
   };
+
+  // CONDITIONAL RENDERING AFTER ALL HOOKS ARE DECLARED
+  if (!mounted || loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-blue-900 p-4 flex items-center justify-center">
+        <div className="text-white text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+          <p>Loading event...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  // Fallback if event not found
+  if (!eventConfig) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-blue-900 p-4 flex items-center justify-center">
+        <div className="text-white text-center">
+          <h1 className="text-2xl font-bold mb-4">Event Not Found</h1>
+          <p className="text-gray-300">The event you're looking for doesn't exist.</p>
+          <a href="/admin" className="mt-4 inline-block bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-lg">
+            View All Events
+          </a>
+        </div>
+      </div>
+    );
+  }
 
   const theme = eventConfig.theme;
 
