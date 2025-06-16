@@ -1,2 +1,8 @@
-# Required for Vercel Python serverless functions
-vaderSentiment==3.3.2
+flask==2.3.3
+flask-cors==4.0.0
+sqlite3
+python-dotenv==1.0.0
+gunicorn==21.2.0
+
+# Alternative si vaderSentiment ne fonctionne pas
+# textblob==0.17.1

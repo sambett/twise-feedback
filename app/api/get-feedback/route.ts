@@ -2,9 +2,20 @@ import { NextResponse } from 'next/server';
 import { db } from '@/app/firebase';
 import { ref, get } from 'firebase/database';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const feedbackRef = ref(db, 'feedback');
+    const { searchParams } = new URL(request.url);
+    const eventId = searchParams.get('eventId');
+    
+    let feedbackRef;
+    if (eventId) {
+      // Get feedback for specific event
+      feedbackRef = ref(db, `events/${eventId}/feedback`);
+    } else {
+      // Fallback: get feedback from old structure for backward compatibility
+      feedbackRef = ref(db, 'feedback');
+    }
+    
     const snapshot = await get(feedbackRef);
     const data = snapshot.val();
     
@@ -17,6 +28,7 @@ export async function GET() {
         feedback: string;
         sentiment: 'pos' | 'neg' | 'neu';
         timestamp: string;
+        eventId?: string;
       }
     })) : [];
 

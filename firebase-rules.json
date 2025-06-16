@@ -1,0 +1,14 @@
+{
+  "rules": {
+    "events": {
+      ".read": true,
+      ".write": true,
+      "$eventId": {
+        "feedback": {
+          ".read": true,
+          ".write": true
+        }
+      }
+    }
+  }
+}
