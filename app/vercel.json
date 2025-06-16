@@ -11,6 +11,6 @@
       }
     ],
     "rewrites": [
-      { "source": "/api/analyze", "destination": "/api/analyze.py" }
+      { "source": "/api/analyze", "destination": "/api/analyse.py" }
     ]
   }
