@@ -13,6 +13,15 @@ interface FirebaseEvent extends EventConfig {
   isCustom?: boolean;
 }
 
+// Default theme constant - outside component to avoid re-creation
+const DEFAULT_THEME = {
+  background: 'from-indigo-900 via-purple-900 to-blue-900',
+  titleGradient: 'from-indigo-300 to-purple-300',
+  buttonGradient: 'from-indigo-600 to-purple-600',
+  buttonHover: 'from-indigo-700 to-purple-700',
+  accent: 'indigo-400'
+};
+
 const AdminOverview = () => {
   const [events, setEvents] = useState<FirebaseEvent[]>([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -23,6 +32,9 @@ const AdminOverview = () => {
   const [selectedEvent, setSelectedEvent] = useState<FirebaseEvent | null>(null);
   const [qrCodeDataURL, setQrCodeDataURL] = useState('');
 
+  // Helper to get event theme with fallback
+  const getEventTheme = (event: FirebaseEvent) => event.theme || DEFAULT_THEME;
+
   // Create Event Form State
   const [newEvent, setNewEvent] = useState({
     title: '',
@@ -31,13 +43,7 @@ const AdminOverview = () => {
     feedbackLabel: 'Share your thoughts',
     feedbackPlaceholder: 'Tell us about your experience...',
     activities: [''],
-    theme: {
-      background: 'from-indigo-900 via-purple-900 to-blue-900',
-      titleGradient: 'from-indigo-300 to-purple-300',
-      buttonGradient: 'from-indigo-600 to-purple-600',
-      buttonHover: 'from-indigo-700 to-purple-700',
-      accent: 'indigo-400'
-    }
+    theme: DEFAULT_THEME
   });
 
   // Predefined themes for easy selection
@@ -140,7 +146,7 @@ const AdminOverview = () => {
         feedbackLabel: 'Share your thoughts',
         feedbackPlaceholder: 'Tell us about your experience...',
         activities: [''],
-        theme: themePresets[0].theme
+        theme: DEFAULT_THEME
       });
     }
   }, [showCreateModal, editingEvent]);
@@ -156,7 +162,7 @@ const AdminOverview = () => {
       activityLabel: newEvent.activityLabel.trim(),
       feedbackLabel: newEvent.feedbackLabel.trim(),
       feedbackPlaceholder: newEvent.feedbackPlaceholder.trim(),
-      activities: newEvent.activities.filter(a => a.trim()).map(a => a.trim()),
+      activities: (newEvent.activities || []).filter(a => a.trim()).map(a => a.trim()),
       theme: newEvent.theme,
       createdAt: Date.now()
     };
@@ -189,13 +195,13 @@ const AdminOverview = () => {
     if (!event.isCustom) return;
     
     setNewEvent({
-      title: event.title,
-      subtitle: event.subtitle,
-      activityLabel: event.activityLabel,
-      feedbackLabel: event.feedbackLabel,
-      feedbackPlaceholder: event.feedbackPlaceholder,
-      activities: [...event.activities],
-      theme: { ...event.theme }
+      title: event.title || '',
+      subtitle: event.subtitle || '',
+      activityLabel: event.activityLabel || 'Which aspect would you like to rate?',
+      feedbackLabel: event.feedbackLabel || 'Share your thoughts',
+      feedbackPlaceholder: event.feedbackPlaceholder || 'Tell us about your experience...',
+      activities: [...(event.activities || [''])],
+      theme: { ...getEventTheme(event) }
     });
     setEditingEvent(event);
   };
@@ -211,7 +217,7 @@ const AdminOverview = () => {
       activityLabel: newEvent.activityLabel.trim(),
       feedbackLabel: newEvent.feedbackLabel.trim(),
       feedbackPlaceholder: newEvent.feedbackPlaceholder.trim(),
-      activities: newEvent.activities.filter(a => a.trim()).map(a => a.trim()),
+      activities: (newEvent.activities || []).filter(a => a.trim()).map(a => a.trim()),
       theme: newEvent.theme,
       updatedAt: Date.now()
     };
@@ -229,33 +235,33 @@ const AdminOverview = () => {
   const addActivity = () => {
     setNewEvent(prev => ({
       ...prev,
-      activities: [...prev.activities, '']
+      activities: [...(prev.activities || []), '']
     }));
   };
 
   const removeActivity = (index: number) => {
     setNewEvent(prev => ({
       ...prev,
-      activities: prev.activities.filter((_, i) => i !== index)
+      activities: (prev.activities || []).filter((_, i) => i !== index)
     }));
   };
 
   const updateActivity = (index: number, value: string) => {
     setNewEvent(prev => ({
       ...prev,
-      activities: prev.activities.map((activity, i) => i === index ? value : activity)
+      activities: (prev.activities || []).map((activity, i) => i === index ? value : activity)
     }));
   };
 
   const duplicateEvent = (sourceEvent: FirebaseEvent) => {
     setNewEvent({
-      title: `${sourceEvent.title} (Copy)`,
-      subtitle: sourceEvent.subtitle,
-      activityLabel: sourceEvent.activityLabel,
-      feedbackLabel: sourceEvent.feedbackLabel,
-      feedbackPlaceholder: sourceEvent.feedbackPlaceholder,
-      activities: [...sourceEvent.activities],
-      theme: { ...sourceEvent.theme }
+      title: `${sourceEvent.title || 'Untitled'} (Copy)`,
+      subtitle: sourceEvent.subtitle || '',
+      activityLabel: sourceEvent.activityLabel || 'Which aspect would you like to rate?',
+      feedbackLabel: sourceEvent.feedbackLabel || 'Share your thoughts',
+      feedbackPlaceholder: sourceEvent.feedbackPlaceholder || 'Tell us about your experience...',
+      activities: [...(sourceEvent.activities || [''])],
+      theme: { ...getEventTheme(sourceEvent) }
     });
     setShowCreateModal(true);
   };
@@ -394,7 +400,7 @@ const AdminOverview = () => {
               <div>
                 <h3 className="text-white font-semibold">Avg Rating</h3>
                 <p className="text-2xl font-bold text-purple-400">
-                  {(Object.values(eventStats).reduce((sum, stat) => sum + stat.avgRating, 0) / events.length).toFixed(1)}
+                  {events.length > 0 ? (Object.values(eventStats).reduce((sum, stat) => sum + stat.avgRating, 0) / events.length).toFixed(1) : '0.0'}
                 </p>
               </div>
             </div>
@@ -406,6 +412,8 @@ const AdminOverview = () => {
           {events.map((event) => {
             const stats = eventStats[event.id] || { responses: 0, avgRating: 0, sentiment: 0 };
             
+            const eventTheme = getEventTheme(event);
+            
             return (
               <div key={event.id} className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-lg p-6 hover:bg-white/10 transition-colors">
                 {/* Event Header */}
@@ -414,7 +422,7 @@ const AdminOverview = () => {
                     <h3 className="text-xl font-semibold text-white mb-1 truncate">{event.title}</h3>
                     <p className="text-gray-400 text-sm">{event.subtitle}</p>
                   </div>
-                  <div className={`w-6 h-6 rounded-full bg-gradient-to-r ${event.theme.buttonGradient} flex-shrink-0 ml-2`}></div>
+                  <div className={`w-6 h-6 rounded-full bg-gradient-to-r ${eventTheme.buttonGradient} flex-shrink-0 ml-2`}></div>
                 </div>
 
                 {/* Stats */}
@@ -446,7 +454,7 @@ const AdminOverview = () => {
 
                   <div className="flex justify-between items-center text-sm">
                     <span className="text-gray-400">Categories:</span>
-                    <span className="text-white font-medium">{event.activities.length}</span>
+                    <span className="text-white font-medium">{event.activities?.length || 0}</span>
                   </div>
                 </div>
 
@@ -455,7 +463,7 @@ const AdminOverview = () => {
                   <div className="flex gap-2">
                     <Link 
                       href={`/admin/${event.id}`}
-                      className={`flex-1 bg-gradient-to-r ${event.theme.buttonGradient} hover:opacity-90 text-white py-2 px-3 rounded text-sm flex items-center justify-center gap-1 transition-opacity`}
+                      className={`flex-1 bg-gradient-to-r ${eventTheme.buttonGradient} hover:opacity-90 text-white py-2 px-3 rounded text-sm flex items-center justify-center gap-1 transition-opacity`}
                     >
                       <Eye className="w-4 h-4" />
                       Dashboard
@@ -689,7 +697,7 @@ const AdminOverview = () => {
                 <div>
                   <label className="block text-white text-sm font-medium mb-2">Activities/Categories</label>
                   <div className="space-y-2">
-                    {newEvent.activities.map((activity, index) => (
+                    {(newEvent.activities || ['']).map((activity, index) => (
                       <div key={index} className="flex gap-2">
                         <input
                           type="text"
@@ -698,7 +706,7 @@ const AdminOverview = () => {
                           className="flex-1 bg-slate-700 text-white rounded px-3 py-2 focus:ring-2 focus:ring-purple-500 outline-none"
                           placeholder={`Activity ${index + 1}`}
                         />
-                        {newEvent.activities.length > 1 && (
+                        {(newEvent.activities || []).length > 1 && (
                           <button
                             onClick={() => removeActivity(index)}
                             className="bg-red-600/20 hover:bg-red-600/30 text-red-400 p-2 rounded transition-colors"
