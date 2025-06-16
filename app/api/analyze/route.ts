@@ -1,39 +1,24 @@
 import { NextResponse } from 'next/server';
 
-// This is a fallback in case the Python API is unavailable
 export async function POST(request: Request) {
   try {
     const { text } = await request.json();
     
-    // First, try to call our Python function
-    try {
-      const pyResponse = await fetch(`${request.headers.get('origin')}/api/analyze`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ text }),
-      });
-      
-      if (pyResponse.ok) {
-        return NextResponse.json(await pyResponse.json());
-      }
-      // If Python API fails, continue to fallback
-    } catch (pyError) {
-      console.log('Python API unavailable, using fallback:', pyError);
+    if (!text || typeof text !== 'string') {
+      return NextResponse.json({ error: 'Text is required' }, { status: 400 });
     }
     
-    // Fallback: Simple sentiment analysis function
+    // Analyze sentiment using our simple algorithm
     const sentimentResult = analyzeSentiment(text);
     
     return NextResponse.json({
       sentiment_score: {
-        pos: sentimentResult === 'pos' ? 0.7 : sentimentResult === 'neu' ? 0.3 : 0.1,
-        neu: sentimentResult === 'neu' ? 0.7 : 0.2,
-        neg: sentimentResult === 'neg' ? 0.7 : sentimentResult === 'neu' ? 0.3 : 0.1,
-        compound: sentimentResult === 'pos' ? 0.8 : sentimentResult === 'neg' ? -0.8 : 0
+        pos: sentimentResult.positive,
+        neu: sentimentResult.neutral, 
+        neg: sentimentResult.negative,
+        compound: sentimentResult.compound
       },
-      dominant_sentiment: sentimentResult
+      dominant_sentiment: sentimentResult.dominant
     });
   } catch (error) {
     console.error('Error analyzing sentiment:', error);
@@ -41,16 +26,75 @@ export async function POST(request: Request) {
   }
 }
 
-// Basic sentiment analysis function
-function analyzeSentiment(text: string): string {
-  const positiveWords = ['great', 'awesome', 'excellent', 'good', 'love', 'amazing', 'interesting', 'enjoyed', 'learn', 'fascinating'];
-  const negativeWords = ['bad', 'poor', 'terrible', 'hate', 'worst', 'boring', 'difficult', 'disappointed', 'confusing', 'waste'];
+// Enhanced sentiment analysis function
+function analyzeSentiment(text: string) {
+  // French and English positive words
+  const positiveWords = [
+    'excellent', 'génial', 'super', 'fantastique', 'parfait', 'impressionnant',
+    'intéressant', 'passionnant', 'merveilleux', 'extraordinaire', 'bien', 
+    'bonne', 'bon', 'cool', 'top', 'formidable', 'adoré', 'fascinant',
+    'great', 'awesome', 'amazing', 'good', 'love', 'wonderful', 'fantastic',
+    'brilliant', 'outstanding', 'incredible', 'enjoyed', 'learn', 'learned'
+  ];
+  
+  // French and English negative words  
+  const negativeWords = [
+    'mauvais', 'nul', 'ennuyeux', 'décevant', 'difficile', 'complexe',
+    'confus', 'incompréhensible', 'fade', 'pas terrible', 'décevant',
+    'bad', 'poor', 'terrible', 'hate', 'worst', 'boring', 'awful',
+    'disappointed', 'confusing', 'waste', 'useless', 'frustrating'
+  ];
+  
+  // French and English neutral words
+  const neutralWords = [
+    'correct', 'moyen', 'standard', 'ordinaire', 'quelconque',
+    'okay', 'fine', 'average', 'normal', 'regular'
+  ];
   
   const words = text.toLowerCase().split(/\s+/);
-  const positiveCount = words.filter(word => positiveWords.some(pos => word.includes(pos))).length;
-  const negativeCount = words.filter(word => negativeWords.some(neg => word.includes(neg))).length;
   
-  if (positiveCount > negativeCount) return 'pos';
-  if (negativeCount > positiveCount) return 'neg';
-  return 'neu';
+  let positiveScore = 0;
+  let negativeScore = 0;
+  let neutralScore = 0;
+  
+  words.forEach(word => {
+    // Check for positive words
+    if (positiveWords.some(pos => word.includes(pos))) {
+      positiveScore += 1;
+    }
+    // Check for negative words  
+    else if (negativeWords.some(neg => word.includes(neg))) {
+      negativeScore += 1;
+    }
+    // Check for neutral words
+    else if (neutralWords.some(neu => word.includes(neu))) {
+      neutralScore += 0.5;
+    }
+  });
+  
+  const totalScore = positiveScore + negativeScore + neutralScore;
+  
+  // Normalize scores
+  const positive = totalScore > 0 ? positiveScore / totalScore : 0;
+  const negative = totalScore > 0 ? negativeScore / totalScore : 0;
+  const neutral = totalScore > 0 ? neutralScore / totalScore : 1 - positive - negative;
+  
+  // Calculate compound score
+  const compound = positive - negative;
+  
+  // Determine dominant sentiment
+  let dominant = 'neu';
+  if (positive > negative && positive > neutral) {
+    dominant = 'pos';
+  } else if (negative > positive && negative > neutral) {
+    dominant = 'neg';
+  }
+  
+  return {
+    positive: Math.round(positive * 100) / 100,
+    negative: Math.round(negative * 100) / 100,
+    neutral: Math.round(neutral * 100) / 100,
+    compound: Math.round(compound * 100) / 100,
+    dominant
+  };
 }

@@ -23,6 +23,37 @@ const nextConfig: NextConfig = {
       },
     ]
   },
+  
+  // Redirections
+  async redirects() {
+    return [
+      {
+        source: '/dashboard',
+        destination: '/admin',
+        permanent: true,
+      },
+    ]
+  },
+  
+  // Configuration des images (si nécessaire)
+  images: {
+    domains: ['vercel.app', 'localhost'],
+    formats: ['image/avif', 'image/webp'],
+  },
+  
+  // Optimisations pour Vercel
+  swcMinify: true,
+  poweredByHeader: false,
+  
+  // Configuration TypeScript
+  typescript: {
+    ignoreBuildErrors: false,
+  },
+  
+  // Configuration ESLint
+  eslint: {
+    ignoreDuringBuilds: false,
+  },
 };
 
 export default nextConfig;
