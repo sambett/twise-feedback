@@ -4,12 +4,6 @@ const nextConfig: NextConfig = {
   // Désactiver le mode strict temporairement pour éviter l'hydratation
   reactStrictMode: false,
   
-  // Configuration pour éviter les erreurs d'hydratation
-  experimental: {
-    // @ts-ignore - Cette option peut ne pas être dans les types officiels
-    suppressHydrationWarning: true,
-  },
-  
   // Headers CORS pour l'API
   async headers() {
     return [
@@ -35,7 +29,7 @@ const nextConfig: NextConfig = {
     ]
   },
   
-  // Configuration des images (si nécessaire)
+  // Configuration des images
   images: {
     domains: ['vercel.app', 'localhost'],
     formats: ['image/avif', 'image/webp'],
@@ -45,12 +39,12 @@ const nextConfig: NextConfig = {
   swcMinify: true,
   poweredByHeader: false,
   
-  // Configuration TypeScript
+  // Configuration TypeScript - plus permissive pour le build
   typescript: {
     ignoreBuildErrors: false,
   },
   
-  // Configuration ESLint
+  // Configuration ESLint - plus permissive pour le build
   eslint: {
     ignoreDuringBuilds: false,
   },

@@ -1,11 +1,12 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Eye, QrCode, BarChart, Users, Star, TrendingUp, Plus, Edit, Trash2, Copy, X, Check, Palette, Download, ExternalLink } from 'lucide-react';
+import { Eye, QrCode, BarChart, Users, Star, Plus, Edit, Trash2, Copy, X, Check, Download, ExternalLink } from 'lucide-react';
 import { getAllEvents, EventConfig } from '../lib/eventConfigs';
 import { db } from '../firebase';
 import { ref, push, set, remove, onValue, off } from 'firebase/database';
 import Link from 'next/link';
+import Image from 'next/image';
 import QRCodeLib from 'qrcode';
 
 interface FirebaseEvent extends EventConfig {
@@ -114,9 +115,9 @@ const AdminOverview = () => {
     
     const eventsRef = ref(db, 'events');
     
-    const unsubscribe = onValue(eventsRef, (snapshot) => {
+    onValue(eventsRef, (snapshot) => {
       if (snapshot.exists()) {
-        const firebaseEvents = Object.entries(snapshot.val()).map(([firebaseId, data]: [string, any]) => ({
+        const firebaseEvents = Object.entries(snapshot.val()).map(([firebaseId, data]: [string, EventConfig & { firebaseId?: string }]) => ({
           ...data,
           firebaseId,
           isCustom: true
@@ -132,8 +133,6 @@ const AdminOverview = () => {
       setEvents(staticEvents); // Fallback to static events
       setLoading(false);
     });
-
-    return () => off(eventsRef);
   }, [mounted]);
 
   // Reset form when modal closes
@@ -569,9 +568,11 @@ const AdminOverview = () => {
                 {/* QR Code Image */}
                 {qrCodeDataURL && (
                   <div className="bg-white p-4 rounded-lg border-2 border-gray-200 inline-block">
-                    <img 
+                    <Image 
                       src={qrCodeDataURL} 
                       alt="QR Code" 
+                      width={256}
+                      height={256}
                       className="w-64 h-64"
                     />
                   </div>

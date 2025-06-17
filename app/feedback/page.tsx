@@ -60,10 +60,10 @@ const FeedbackForm = () => {
           window.location.href = '/nuit-chercheurs';
         }, 3000);
       } else {
-        throw new Error('Erreur lors de l\'envoi');
+        throw new Error("Erreur lors de l&apos;envoi");
       }
     } catch (error) {
-      console.error('Erreur lors de l\'envoi:', error);
+      console.error("Erreur lors de l&apos;envoi:", error);
       // Simuler un succès pour la démo
       setSubmitted(true);
       setTimeout(() => {
@@ -119,7 +119,7 @@ const FeedbackForm = () => {
           <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
             <p className="text-sm text-green-700">
               <strong>Votre impact:</strong> Vos commentaires aident à améliorer en temps réel 
-              l'expérience de la Nuit des Chercheurs pour tous les participants !
+              l&apos;expérience de la Nuit des Chercheurs pour tous les participants !
             </p>
           </div>
           <p className="text-sm text-gray-500">
@@ -165,11 +165,11 @@ const FeedbackForm = () => {
               Activité évaluée
             </label>
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4">
-              <p className="text-blue-800 font-semibold text-lg">{formData.activity}</p>
-              <p className="text-blue-600 text-sm">Code QR: {formData.qrCode}</p>
-              <p className="text-blue-500 text-xs mt-1">
-                ✨ Votre retour sera analysé en temps réel par notre système IA
-              </p>
+            <p className="text-blue-800 font-semibold text-lg">{formData.activity}</p>
+            <p className="text-blue-600 text-sm">Code QR: {formData.qrCode}</p>
+            <p className="text-blue-500 text-xs mt-1">
+            ✨ Votre retour sera analysé en temps réel par notre système IA
+            </p>
             </div>
           </div>
 
@@ -216,7 +216,7 @@ const FeedbackForm = () => {
               rows={4}
               maxLength={500}
               className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-sm"
-              placeholder="Partagez votre expérience, ce que vous avez aimé, vos suggestions d'amélioration..."
+              placeholder="Partagez votre expérience, ce que vous avez aimé, vos suggestions d&apos;amélioration..."
             />
             <div className="flex justify-between items-center mt-1">
               <p className="text-xs text-gray-500">
@@ -240,15 +240,15 @@ const FeedbackForm = () => {
               </label>
               <label className="flex items-center">
                 <input type="checkbox" className="mr-3 rounded text-blue-600" />
-                <span className="text-sm text-gray-700">L'explication était claire et accessible</span>
+                <span className="text-sm text-gray-700">L&apos;explication était claire et accessible</span>
               </label>
               <label className="flex items-center">
                 <input type="checkbox" className="mr-3 rounded text-blue-600" />
-                <span className="text-sm text-gray-700">L'activité était interactive et engageante</span>
+                <span className="text-sm text-gray-700">L&apos;activité était interactive et engageante</span>
               </label>
               <label className="flex items-center">
                 <input type="checkbox" className="mr-3 rounded text-blue-600" />
-                <span className="text-sm text-gray-700">J'ai appris quelque chose de nouveau</span>
+                <span className="text-sm text-gray-700">J&apos;ai appris quelque chose de nouveau</span>
               </label>
             </div>
           </div>
@@ -288,7 +288,7 @@ const FeedbackForm = () => {
         {/* Footer */}
         <div className="text-center mt-6 space-y-2">
           <p className="text-sm text-gray-600">
-            🤖 Votre feedback sera traité par notre système d'IA pour améliorer l'événement en temps réel
+            🤖 Votre feedback sera traité par notre système d&apos;IA pour améliorer l&apos;événement en temps réel
           </p>
           <div className="flex items-center justify-center space-x-4 text-xs text-gray-500">
             <a href="/nuit-chercheurs" className="hover:text-blue-600 underline">

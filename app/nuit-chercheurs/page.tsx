@@ -344,7 +344,7 @@ const NuitChercheursDashboard = () => {
             <div className="space-y-2 text-yellow-700">
               <h4 className="font-semibold">✅ Points Forts Détectés:</h4>
               <ul className="space-y-1 text-sm">
-                <li>• L'atelier Robotique performe excellemment (92% satisfaction)</li>
+                <li>• L&apos;atelier Robotique performe excellemment (92% satisfaction)</li>
                 <li>• Sentiment général très positif ({realTimeData.sentiment.positive}%)</li>
                 <li>• Forte participation sur toutes les activités</li>
               </ul>
@@ -352,8 +352,8 @@ const NuitChercheursDashboard = () => {
             <div className="space-y-2 text-orange-700">
               <h4 className="font-semibold">🎯 Optimisations Suggérées:</h4>
               <ul className="space-y-1 text-sm">
-                <li>• Augmenter la capacité de l'atelier Robotique</li>
-                <li>• Simplifier l'approche Biotechnologie si nécessaire</li>
+                <li>• Augmenter la capacité de l&apos;atelier Robotique</li>
+                <li>• Simplifier l&apos;approche Biotechnologie si nécessaire</li>
                 <li>• Maintenir la dynamique actuelle jusqu'à 18h</li>
               </ul>
             </div>
@@ -366,7 +366,7 @@ const NuitChercheursDashboard = () => {
             🏆 Système développé pour le concours Nuit des Chercheurs 2025 | 
             Analyse NLP en temps réel | 
             Dashboard interactif | 
-            {error ? ' Mode hors-ligne actif' : ' Connecté à l\'API'}
+            {error ? ' Mode hors-ligne actif' : ' Connecté à l&apos;API'}
           </p>
         </div>
       </div>

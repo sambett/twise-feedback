@@ -63,9 +63,9 @@ export default function EventAdminDashboard({ params }: EventAdminProps) {
     
     // If not found in static events, check Firebase
     const eventsRef = ref(db, 'events');
-    const unsubscribe = onValue(eventsRef, (snapshot) => {
+    onValue(eventsRef, (snapshot) => {
       if (snapshot.exists()) {
-        const firebaseEvents = Object.entries(snapshot.val()).map(([firebaseId, data]: [string, any]) => ({
+        const firebaseEvents = Object.entries(snapshot.val()).map(([firebaseId, data]: [string, EventConfig & { firebaseId?: string }]) => ({
           ...data,
           firebaseId
         }));
@@ -84,8 +84,6 @@ export default function EventAdminDashboard({ params }: EventAdminProps) {
       console.error('Firebase error:', error);
       setEventConfig(staticEvent); // Use fallback on error
     });
-    
-    return () => off(eventsRef);
   }, [params.eventId, mounted]);
 
   useEffect(() => {
