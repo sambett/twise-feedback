@@ -4,11 +4,9 @@ const nextConfig: NextConfig = {
   // Désactiver le mode strict temporairement pour éviter l'hydratation
   reactStrictMode: false,
   
-  // Configuration pour éviter les erreurs d'hydratation
-  experimental: {
-    // @ts-ignore - Cette option peut ne pas être dans les types officiels
-    suppressHydrationWarning: true,
-  },
+  // Configuration pour le déploiement statique (GitHub Pages)
+  output: 'export',
+  trailingSlash: true,
   
   // Headers CORS pour l'API
   async headers() {
@@ -32,16 +30,22 @@ const nextConfig: NextConfig = {
         destination: '/admin',
         permanent: true,
       },
+      {
+        source: '/demo',
+        destination: '/admin',
+        permanent: false,
+      },
     ]
   },
   
-  // Configuration des images (si nécessaire)
+  // Configuration des images
   images: {
-    domains: ['vercel.app', 'localhost'],
+    domains: ['vercel.app', 'localhost', 'firebase.app', 'web.app', 'github.io'],
     formats: ['image/avif', 'image/webp'],
+    unoptimized: true,
   },
   
-  // Optimisations pour Vercel
+  // Optimisations pour le déploiement
   swcMinify: true,
   poweredByHeader: false,
   

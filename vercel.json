@@ -1,16 +1,46 @@
 {
-  "version": 2,
-  "name": "twise-feedback",
-  "builds": [
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "nextjs",
+  "buildCommand": "npm run build",
+  "devCommand": "npm run dev",
+  "installCommand": "npm install",
+  "outputDirectory": ".next",
+  "public": true,
+  "rewrites": [
     {
-      "src": "package.json",
-      "use": "@vercel/next"
+      "source": "/api/(.*)",
+      "destination": "/api/$1"
     }
   ],
-  "routes": [
+  "redirects": [
     {
-      "src": "/(.*)",
-      "dest": "/$1"
+      "source": "/",
+      "destination": "/admin",
+      "permanent": false
+    },
+    {
+      "source": "/demo",
+      "destination": "/admin",
+      "permanent": false
+    }
+  ],
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET, POST, PUT, DELETE, OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "Content-Type, Authorization"
+        }
+      ]
     }
   ],
   "env": {
@@ -23,7 +53,7 @@
     "NEXT_PUBLIC_FIREBASE_DATABASE_URL": "@firebase-database-url"
   },
   "functions": {
-    "app/**/*.tsx": {
+    "app/**/*.{js,ts,jsx,tsx}": {
       "maxDuration": 30
     }
   }

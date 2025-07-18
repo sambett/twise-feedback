@@ -2,13 +2,24 @@
   "rules": {
     "events": {
       ".read": true,
-      ".write": true,
       "$eventId": {
+        ".validate": "newData.hasChildren(['name', 'created'])",
         "feedback": {
           ".read": true,
-          ".write": true
+          ".write": "newData.hasChildren(['rating', 'timestamp'])",
+          "$feedbackId": {
+            ".validate": "newData.hasChild('rating') && newData.child('rating').isNumber() && newData.child('rating').val() >= 1 && newData.child('rating').val() <= 10"
+          }
+        },
+        "settings": {
+          ".read": true,
+          ".write": "newData.hasChildren(['theme', 'active'])"
         }
       }
+    },
+    "admin": {
+      ".read": false,
+      ".write": false
     }
   }
 }

@@ -5,6 +5,7 @@ import { Star, ThumbsUp, ThumbsDown, Meh } from 'lucide-react';
 import { ref, push, onValue, off } from "firebase/database";
 import { db } from "../../firebase";
 import { eventConfigs, EventConfig } from '../../lib/eventConfigs';
+import Link from 'next/link';
 
 interface EventPageProps {
   params: Promise<{
@@ -49,9 +50,9 @@ const UniversalFeedbackForm = ({ params }: EventPageProps) => {
     
     // If not found in static events, check Firebase
     const eventsRef = ref(db, 'events');
-    const unsubscribe = onValue(eventsRef, (snapshot) => {
+    onValue(eventsRef, (snapshot) => {
       if (snapshot.exists()) {
-        const firebaseEvents = Object.entries(snapshot.val()).map(([firebaseId, data]: [string, any]) => ({
+        const firebaseEvents = Object.entries(snapshot.val()).map(([firebaseId, data]: [string, EventConfig & { firebaseId?: string }]) => ({
           ...data,
           firebaseId
         }));
@@ -66,8 +67,6 @@ const UniversalFeedbackForm = ({ params }: EventPageProps) => {
       console.error('Firebase error:', error);
       setLoading(false);
     });
-    
-    return () => off(eventsRef);
   }, [resolvedParams.eventId, mounted]);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
@@ -157,10 +156,10 @@ const UniversalFeedbackForm = ({ params }: EventPageProps) => {
       <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-blue-900 p-4 flex items-center justify-center">
         <div className="text-white text-center">
           <h1 className="text-2xl font-bold mb-4">Event Not Found</h1>
-          <p className="text-gray-300">The event you're looking for doesn't exist.</p>
-          <a href="/admin" className="mt-4 inline-block bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-lg">
+          <p className="text-gray-300">The event you&apos;re looking for doesn&apos;t exist.</p>
+          <Link href="/admin" className="mt-4 inline-block bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-lg">
             View All Events
-          </a>
+          </Link>
         </div>
       </div>
     );

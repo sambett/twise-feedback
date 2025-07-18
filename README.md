@@ -1,131 +1,168 @@
-# 🚀 Enhanced Universal Feedback Platform - COMPETITION READY!
+# Universal Feedback Platform
 
-## 🏆 **STATUS: ALL SYSTEMS GO - ZERO ERRORS!**
-✨ **HYDRATION ERRORS ELIMINATED** - Smooth, error-free performance!
-✨ **COLORS OPTIMIZED** - Perfect readability on all themes!
-✨ **SIMPLIFIED & CLEAN** - 3 core events + unlimited custom creation!
-✨ **COMPETITION TESTED** - Ready to dominate!
+> **🌟 Live Demo**: https://sambett.github.io/twise-feedback/admin
 
-### **🎯 Quick Launchers**
-- **`launch-platform.bat`** - ⭐ ENHANCED: Starts clean platform
-- **`test-clean-platform.bat`** - ⭐ NEW: Tests all functionality
-- **`demo-launcher.bat`** - Opens demo URLs
-- **`troubleshoot.bat`** - Fixes any issues
-- **`COMPETITION-READY.md`** - ⭐ YOUR WINNING STRATEGY
+A real-time feedback and sentiment analysis platform for events.
 
-### **📱 Competition Setup**
+## 🌐 Live Demo URLs
 
-#### **Pre-Demo Checklist:**
-1. **Start platform:** `launch-platform.bat`
-2. **Test everything:** `test-clean-platform.bat`
-3. **Review strategy:** Read `COMPETITION-READY.md`
-4. **Practice demo:** 3-minute winning presentation
+### **🎯 Perfect for Presentations:**
+| Demo | URL | Description |
+|------|-----|-------------|
+| **Admin Dashboard** | https://sambett.github.io/twise-feedback/admin | 🏠 Universal overview |
+| **Wedding Form** | https://sambett.github.io/twise-feedback/event/sam-wedding | 💒 Elegant theme |
+| **Wedding Dashboard** | https://sambett.github.io/twise-feedback/admin/sam-wedding | 📊 Real-time analytics |
+| **Product Demo** | https://sambett.github.io/twise-feedback/event/techflow-demo | 💼 Corporate theme |
+| **TWISE Dashboard** | https://sambett.github.io/twise-feedback/admin/twise-night | 🔬 Research theme |
 
-#### **3-Minute Demo Flow:**
-1. **Universal concept** → Show `/admin` with 3 event types
-2. **🔥 LIVE CREATION** → Click "Create New Event" during presentation
-3. **Instant deployment** → Event works immediately with AI analysis
-4. **Real-time demo** → Submit feedback, show live analytics
+### **🔗 Quick Access:**
+**Main Demo**: https://sambett.github.io/twise-feedback/admin
 
----
+### **Local Development**
+- **Admin Dashboard**: http://localhost:3000/admin
+- **Wedding Event**: http://localhost:3000/event/sam-wedding
+- **Wedding Dashboard**: http://localhost:3000/admin/sam-wedding
+- **Product Demo**: http://localhost:3000/event/techflow-demo
+- **TWISE Dashboard**: http://localhost:3000/admin/twise-night
 
-## 🌟 **Your Clean Platform**
+## 🚀 Quick Start
 
-### **✅ 3 Core Template Events:**
-- **🔬 TWISE Night** (Research Purple - Perfect contrast) 
-- **💒 Wedding Event** (Rose theme - Elegant & readable)
-- **🏢 TechFlow Demo** (Corporate Gray - Professional)
+### Local Development
 
-### **✅ PLUS Unlimited Custom Creation:**
-- 🎨 **Live event creation** - Create during demo presentation
-- ⚡ **Instant deployment** - Events work immediately
-- 🎭 **5 beautiful themes** - Perfect color contrast for readability
-- ✏️ **Full management** - Edit, delete, duplicate events
-- 🔄 **Real-time updates** - Zero lag, smooth performance
+1. **Clone the repository**:
+   ```bash
+   git clone https://github.com/sambett/twise-feedback.git
+   cd twise-feedback
+   ```
 
-### **✅ Each Event Includes:**
-- 🎨 **Themed feedback forms** (beautiful, responsive)
-- 📊 **Real-time analytics** (live sentiment analysis)
-- 🤖 **AI-powered insights** (genuine sentiment processing)
-- ⚡ **Instant QR codes** (automatic generation)
-- 📱 **Mobile-first design** (works on any device)
+2. **Install dependencies**:
+   ```bash
+   npm install
+   ```
 
----
+3. **Configure environment**:
+   ```bash
+   cp .env.example .env.local
+   # Edit .env.local with your Firebase credentials
+   ```
 
-## 🎯 **Competition URLs - VERIFIED WORKING**
+4. **Start the platform**:
+   ```bash
+   # Option 1: Use the launcher
+   start.bat
+   
+   # Option 2: Manual start
+   npm run dev
+   ```
 
-| Purpose | URL | Status |
-|---------|-----|--------|
-| **🎛️ Master Control** | `/admin` | ✅ **CREATE EVENTS LIVE** |
-| **🔬 TWISE Dashboard** | `/admin/twise-night` | ✅ Research theme |
-| **💒 Wedding Dashboard** | `/admin/sam-wedding` | ✅ Elegant theme |
-| **🏢 TechFlow Dashboard** | `/admin/techflow-demo` | ✅ Corporate theme |
-| **📝 Event Forms** | `/event/{event-id}` | ✅ **Any event works instantly** |
+5. **Open demo**:
+   ```bash
+   # After server is running
+   demo.bat
+   ```
 
----
+## 🎯 Demo Flow
 
-## 🏆 **Competition Victory Strategy**
+### **Perfect Presentation Sequence:**
+1. **Start with Admin Dashboard** → Show universal concept
+2. **Open Wedding Form** → Demonstrate elegant theme
+3. **View Wedding Dashboard** → Show real-time analytics
+4. **Open Product Demo** → Prove corporate versatility
+5. **View TWISE Dashboard** → Show research theme
 
-### **🎯 Your Winning Message:**
-*"We didn't just solve TWISE Night - we built a universal AI feedback platform. Same intelligent analysis, unlimited event types. I can create a new event live, right now, during this presentation."*
-
-### **⚡ 3-Minute Demo Flow:**
-1. **Universal Platform** (30s) - Show admin with 3 different event types
-2. **🔥 LIVE CREATION** (90s) - Create "Judge Demo Event" with custom activities
-3. **Instant Results** (60s) - Submit feedback → AI analysis → Real-time dashboard
-
-### **🚀 Technical Superiority:**
-- **✅ Zero errors** (hydration issues eliminated)
-- **✅ Perfect colors** (optimized contrast, professional themes)
-- **✅ Real AI** (genuine sentiment analysis, not simulated)
-- **✅ Live scalability** (create events during presentation)
-- **✅ Clean architecture** (professional, modular, maintainable)
-- **✅ Business ready** (immediate SaaS deployment potential)
-
----
-
-## 🚨 **Problems? Solutions:**
-
-| Problem | Solution |
-|---------|----------|
-| **Won't start** | Run `troubleshoot.bat` → Option 2 |
-| **Port busy** | Run `troubleshoot.bat` → Option 1 |
-| **Missing tabs** | Run `demo-launcher.bat` |
-| **Need reset** | Run `troubleshoot.bat` → Option 2 |
-
----
-
-## 🎉 **Victory Checklist - ALL VERIFIED ✅**
-
-### **🔧 Technical Excellence:**
-- [x] **Zero hydration errors** (smooth React rendering)
-- [x] **Perfect color contrast** (readable on all themes)
-- [x] **Clean 3-event system** (no bloat, professional)
-- [x] **Real-time AI analysis** (genuine sentiment processing)
-- [x] **Firebase integration** (rules updated, working)
-- [x] **Mobile responsive** (works on any device)
-
-### **🎯 Competition Readiness:**
-- [x] **Demo strategy prepared** (3-minute winning flow)
-- [x] **Live creation tested** (create events during presentation)
-- [x] **Platform tested** (`test-clean-platform.bat` passes)
-- [x] **All URLs verified** (every link works perfectly)
-- [x] **Victory message crafted** (universal platform concept)
-
-### **🚀 Final Commands:**
+### **Local Demo:**
 ```bash
-# Start your winning platform
-double-click launch-platform.bat
-
-# Verify everything works
-double-click test-clean-platform.bat
-
-# Read your victory strategy
-open COMPETITION-READY.md
+start.bat  # Start server
+demo.bat   # Open all URLs
 ```
 
-**🏆 YOU'RE READY TO WIN! Clean, fast, impressive, competition-dominating!** 🚀
+### **Production Demo:**
+Visit the GitHub Pages URLs above - same experience as local demo!
+
+## 📁 Project Structure
+
+```
+├── app/                    # Next.js application
+│   ├── admin/             # Admin dashboards
+│   ├── event/             # Event feedback forms
+│   ├── api/               # API endpoints
+│   └── lib/               # Utilities
+├── backend/               # Python Flask backend
+├── start.bat              # Quick launcher
+├── demo.bat               # Demo URL opener
+└── __TO_DELETE__/         # Archived files
+```
+
+## 🚀 Deployment
+
+### **GitHub Pages (Current)**
+This repository is configured for automatic deployment to GitHub Pages. Every push to the `main` branch automatically deploys to:
+**https://sambett.github.io/twise-feedback**
+
+### **Deploy to Other Platforms**
+
+#### **Vercel**
+```bash
+npm i -g vercel
+vercel --prod
+```
+
+#### **Firebase Hosting**
+```bash
+npm i -g firebase-tools
+firebase login
+firebase init hosting
+npm run build
+firebase deploy
+```
+
+## 🔧 Commands
+
+- `start.bat` - Install dependencies and start server
+- `demo.bat` - Open demo URLs (requires server running)
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run start` - Start production server
+
+## 🐍 Backend (Optional)
+
+The Python backend provides enhanced sentiment analysis:
+
+```bash
+cd backend
+pip install -r requirements.txt
+python app.py
+```
+
+## 📊 Key Features
+
+- **Real-time Analytics**: Live sentiment analysis
+- **Multi-theme Support**: Wedding, corporate, research themes
+- **Responsive Design**: Works on all devices
+- **Firebase Integration**: Real-time database
+- **QR Code Generation**: Easy event access
+
+## 🎨 Customization
+
+To add new event types, update `app/lib/eventConfigs.ts` and add theme styles to `app/globals.css`.
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/amazing-feature`
+3. Commit changes: `git commit -m 'Add amazing feature'`
+4. Push to branch: `git push origin feature/amazing-feature`
+5. Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License.
 
 ---
 
-*Enhanced platform with zero errors, perfect colors, and unlimited scalability! 💡*
+**🌟 Ready to demo? Use the GitHub Pages URLs above for live presentations!**
+
+**Local**: Run `start.bat` then `demo.bat`  
+**Production**: Use the live URLs above - same experience!
+
+**Repository**: https://github.com/sambett/twise-feedback
