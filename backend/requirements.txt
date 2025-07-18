@@ -1,0 +1,25 @@
+# Universal Feedback Platform - Backend Dependencies
+
+# Core Flask framework
+flask==2.3.3
+flask-cors==4.0.0
+
+# Database (SQLite is built-in with Python)
+# sqlite3 is included with Python standard library
+
+# Environment management
+python-dotenv==1.0.0
+
+# Production server
+gunicorn==21.2.0
+
+# Data processing
+numpy==1.24.3
+pandas==2.0.3
+
+# Optional: Enhanced text processing
+# textblob==0.17.1
+# vaderSentiment==3.3.2
+
+# Development tools
+flask-testing==0.8.1
