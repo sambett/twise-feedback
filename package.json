@@ -16,7 +16,6 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "export": "next build && next export",
     "clean": "rimraf .next node_modules/.cache",
     "reset": "npm run clean && npm install",
     "type-check": "tsc --noEmit",

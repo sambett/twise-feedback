@@ -4,10 +4,6 @@ const nextConfig: NextConfig = {
   // Désactiver le mode strict temporairement pour éviter l'hydratation
   reactStrictMode: false,
   
-  // Configuration pour le déploiement statique (GitHub Pages)
-  output: 'export',
-  trailingSlash: true,
-  
   // Headers CORS pour l'API
   async headers() {
     return [
@@ -38,14 +34,13 @@ const nextConfig: NextConfig = {
     ]
   },
   
-  // Configuration des images
+  // Configuration des images pour Vercel
   images: {
-    domains: ['vercel.app', 'localhost', 'firebase.app', 'web.app', 'github.io'],
+    domains: ['vercel.app', 'localhost', 'firebase.app', 'web.app'],
     formats: ['image/avif', 'image/webp'],
-    unoptimized: true,
   },
   
-  // Optimisations pour le déploiement
+  // Optimisations pour Vercel
   swcMinify: true,
   poweredByHeader: false,
   
