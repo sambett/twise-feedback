@@ -7,6 +7,17 @@ A real-time feedback and sentiment analysis platform for events.
 ## 🌐 Live Demo URLs
 
 ### **🎯 Perfect for Presentations:**
+
+#### **Vercel (Primary)**
+| Demo | URL | Description |
+|------|-----|-------------|
+| **Admin Dashboard** | https://twise-feedback.vercel.app/admin | 🏠 Universal overview |
+| **Wedding Form** | https://twise-feedback.vercel.app/event/sam-wedding | 💒 Elegant theme |
+| **Wedding Dashboard** | https://twise-feedback.vercel.app/admin/sam-wedding | 📊 Real-time analytics |
+| **Product Demo** | https://twise-feedback.vercel.app/event/techflow-demo | 💼 Corporate theme |
+| **TWISE Dashboard** | https://twise-feedback.vercel.app/admin/twise-night | 🔬 Research theme |
+
+#### **GitHub Pages (Backup)**
 | Demo | URL | Description |
 |------|-----|-------------|
 | **Admin Dashboard** | https://sambett.github.io/twise-feedback/admin | 🏠 Universal overview |
@@ -16,7 +27,8 @@ A real-time feedback and sentiment analysis platform for events.
 | **TWISE Dashboard** | https://sambett.github.io/twise-feedback/admin/twise-night | 🔬 Research theme |
 
 ### **🔗 Quick Access:**
-**Main Demo**: https://sambett.github.io/twise-feedback/admin
+**Primary Demo**: https://twise-feedback.vercel.app/admin  
+**Backup Demo**: https://sambett.github.io/twise-feedback/admin
 
 ### **Local Development**
 - **Admin Dashboard**: http://localhost:3000/admin
@@ -77,7 +89,20 @@ demo.bat   # Open all URLs
 ```
 
 ### **Production Demo:**
-Visit the GitHub Pages URLs above - same experience as local demo!
+
+#### **Vercel (Primary):**
+- https://twise-feedback.vercel.app/admin
+- https://twise-feedback.vercel.app/event/sam-wedding
+- https://twise-feedback.vercel.app/admin/sam-wedding
+- https://twise-feedback.vercel.app/event/techflow-demo
+- https://twise-feedback.vercel.app/admin/twise-night
+
+#### **GitHub Pages (Backup):**
+- https://sambett.github.io/twise-feedback/admin
+- https://sambett.github.io/twise-feedback/event/sam-wedding
+- https://sambett.github.io/twise-feedback/admin/sam-wedding
+- https://sambett.github.io/twise-feedback/event/techflow-demo
+- https://sambett.github.io/twise-feedback/admin/twise-night
 
 ## 📁 Project Structure
 
@@ -115,6 +140,33 @@ firebase init hosting
 npm run build
 firebase deploy
 ```
+
+## 🚀 Deployment
+
+### **Vercel (Primary Platform)**
+This repository is optimized for Vercel deployment with server-side rendering:
+
+1. **Connect to Vercel**: https://vercel.com/new
+2. **Import repository**: Select this GitHub repository
+3. **Set environment variables** in Vercel dashboard:
+   - `NEXT_PUBLIC_FIREBASE_API_KEY`
+   - `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`
+   - `NEXT_PUBLIC_FIREBASE_PROJECT_ID`
+   - `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`
+   - `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`
+   - `NEXT_PUBLIC_FIREBASE_APP_ID`
+   - `NEXT_PUBLIC_FIREBASE_DATABASE_URL`
+4. **Deploy**: Automatic on every push
+
+**Live URLs**: https://twise-feedback.vercel.app
+
+### **GitHub Pages (Backup Platform)**
+Automatic deployment with GitHub Actions:
+1. **Enable GitHub Pages** in repository settings
+2. **Set environment variables** in repository secrets
+3. **Deploy**: Automatic on every push to master
+
+**Live URLs**: https://sambett.github.io/twise-feedback
 
 ## 🔧 Commands
 

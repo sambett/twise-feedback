@@ -48,6 +48,9 @@ __TO_DELETE__/
 .backup/
 temp/
 
+# Keep GitHub config file
+!next.config.github.ts
+
 # OS generated files
 Thumbs.db
 ehthumbs.db
