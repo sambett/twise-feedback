@@ -2,9 +2,9 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [ main ]
+    branches: [ master ]
   pull_request:
-    branches: [ main ]
+    branches: [ master ]
 
 jobs:
   build-and-deploy:
@@ -36,14 +36,14 @@ jobs:
         
     - name: Deploy to GitHub Pages
       uses: peaceiris/actions-gh-pages@v4
-      if: github.ref == 'refs/heads/main'
+      if: github.ref == 'refs/heads/master'
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: ./out
         
     - name: Comment deployment URLs
       uses: actions/github-script@v7
-      if: github.ref == 'refs/heads/main'
+      if: github.ref == 'refs/heads/master'
       with:
         script: |
           const baseUrl = 'https://sambett.github.io/twise-feedback';
