@@ -1,22 +1,23 @@
-import React from 'react';
+import React, { use } from 'react';
 import Image from 'next/image';
 import { getEventConfig } from '../../lib/eventConfigs';
 import { PrintButton } from '../PrintButton';
 
 interface QRPageProps {
-  params: {
+  params: Promise<{
     eventId: string;
-  };
+  }>;
 }
 
 export default function EventQRCodePage({ params }: QRPageProps) {
-  const eventConfig = getEventConfig(params.eventId);
-  const formUrl = `https://twise-feedback.vercel.app/event/${params.eventId}`;
+  const resolvedParams = use(params);
+  const eventConfig = getEventConfig(resolvedParams.eventId);
+  const formUrl = `https://twise-feedback.vercel.app/event/${resolvedParams.eventId}`;
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(formUrl)}`;
 
   // Extract colors from theme for styling
   const getThemeColors = () => {
-    switch (params.eventId) {
+    switch (resolvedParams.eventId) {
       case 'sam-wedding':
         return {
           background: 'from-pink-50 to-purple-100',
