@@ -1,6 +1,6 @@
 // Demo data generator script - Run this once to populate your Firebase with sample data
 
-import { ref, push, set } from 'firebase/database';
+import { ref, push } from 'firebase/database';
 import { db } from '../firebase';
 
 // Sample feedback data for different events
