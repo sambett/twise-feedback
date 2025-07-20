@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, use } from 'react';
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Users, Star, TrendingUp, MessageSquare, ArrowLeft } from 'lucide-react';
 import { getEventConfig, EventConfig } from '../../lib/eventConfigs';
@@ -33,12 +33,15 @@ interface DashboardStats {
 }
 
 interface EventAdminProps {
-  params: {
+  params: Promise<{
     eventId: string;
-  };
+  }>;
 }
 
 export default function EventAdminDashboard({ params }: EventAdminProps) {
+  // Unwrap the params Promise using React.use()
+  const resolvedParams = use(params);
+  
   const [feedbackData, setFeedbackData] = useState<FeedbackItem[]>([]);
   const [eventConfig, setEventConfig] = useState<EventConfig | null>(null);
   const [loading, setLoading] = useState(true);
@@ -55,7 +58,7 @@ export default function EventAdminDashboard({ params }: EventAdminProps) {
     if (!mounted) return;
     
     // First check static events
-    const staticEvent = getEventConfig(params.eventId);
+    const staticEvent = getEventConfig(resolvedParams.eventId);
     if (staticEvent && staticEvent.id !== 'twise-night') { // Not fallback
       setEventConfig(staticEvent);
       return;
@@ -70,7 +73,7 @@ export default function EventAdminDashboard({ params }: EventAdminProps) {
           firebaseId
         }));
         
-        const foundEvent = firebaseEvents.find(event => event.id === params.eventId);
+        const foundEvent = firebaseEvents.find(event => event.id === resolvedParams.eventId);
         if (foundEvent) {
           setEventConfig(foundEvent);
         } else if (!staticEvent || staticEvent.id === 'twise-night') {
@@ -84,12 +87,12 @@ export default function EventAdminDashboard({ params }: EventAdminProps) {
       console.error('Firebase error:', error);
       setEventConfig(staticEvent); // Use fallback on error
     });
-  }, [params.eventId, mounted]);
+  }, [resolvedParams.eventId, mounted]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch(`/api/get-feedback?eventId=${params.eventId}`);
+        const response = await fetch(`/api/get-feedback?eventId=${resolvedParams.eventId}`);
         if (!response.ok) throw new Error('Failed to fetch data');
         const feedbackArray = await response.json();
 
@@ -106,7 +109,7 @@ export default function EventAdminDashboard({ params }: EventAdminProps) {
     fetchData();
     const interval = setInterval(fetchData, 5000);
     return () => clearInterval(interval);
-  }, [params.eventId]);
+  }, [resolvedParams.eventId]);
 
   const normalizeDataToPositiveNeutralNegative = (data: FeedbackItem[]) => {
     return data.map(item => ({
