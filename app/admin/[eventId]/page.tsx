@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Users, Star, TrendingUp, MessageSquare, ArrowLeft } from 'lucide-react';
 import { getEventConfig, EventConfig } from '../../lib/eventConfigs';
-import { ref, onValue, off } from 'firebase/database';
+import { ref, onValue } from 'firebase/database';
 import { db } from '../../firebase';
 import Link from 'next/link';
 

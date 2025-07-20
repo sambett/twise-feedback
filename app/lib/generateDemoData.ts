@@ -116,7 +116,7 @@ export async function generateDemoData() {
     console.log('✅ Demo data generated successfully!');
     console.log('You can now view your dashboards at:');
     console.log('- TWISE Night: /admin/twise-night');
-    console.log('- Sam\\'s Wedding: /admin/sam-wedding'); 
+    console.log('- Sam\'s Wedding: /admin/sam-wedding'); 
     console.log('- TechFlow Demo: /admin/techflow-demo');
     
   } catch (error) {

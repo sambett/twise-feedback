@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, FormEvent, ChangeEvent, use } from 'react';
 import { Star, ThumbsUp, ThumbsDown, Meh } from 'lucide-react';
-import { ref, push, onValue, off } from "firebase/database";
+import { ref, push, onValue } from "firebase/database";
 import { db } from "../../firebase";
 import { eventConfigs, EventConfig } from '../../lib/eventConfigs';
 import Link from 'next/link';

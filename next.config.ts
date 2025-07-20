@@ -50,8 +50,7 @@ const nextConfig: NextConfig = {
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
   
-  // Optimizations for Vercel
-  swcMinify: true,
+  // Remove deprecated swcMinify - it's enabled by default in Next.js 15
   poweredByHeader: false,
   
   // TypeScript configuration
@@ -64,10 +63,8 @@ const nextConfig: NextConfig = {
     ignoreDuringBuilds: false,
   },
   
-  // Experimental features for App Router
-  experimental: {
-    serverComponentsExternalPackages: ['firebase-admin'],
-  },
+  // Updated external packages configuration (fixed deprecated option)
+  serverExternalPackages: ['firebase-admin'],
 };
 
 export default nextConfig;
