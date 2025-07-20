@@ -117,7 +117,8 @@ const AdminOverview = () => {
     
     onValue(eventsRef, (snapshot) => {
       if (snapshot.exists()) {
-        const firebaseEvents = Object.entries(snapshot.val()).map(([firebaseId, data]: [string, EventConfig & { firebaseId?: string }]) => ({
+        const firebaseData = snapshot.val() as Record<string, EventConfig>;
+        const firebaseEvents = Object.entries(firebaseData).map(([firebaseId, data]) => ({
           ...data,
           firebaseId,
           isCustom: true
