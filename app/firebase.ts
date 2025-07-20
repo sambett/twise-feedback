@@ -13,9 +13,31 @@ const firebaseConfig = {
 };
 
 // Validate required environment variables
-if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
-  throw new Error('Missing required Firebase configuration. Please check your .env.local file.');
+const requiredEnvVars = [
+  'NEXT_PUBLIC_FIREBASE_API_KEY',
+  'NEXT_PUBLIC_FIREBASE_PROJECT_ID',
+  'NEXT_PUBLIC_FIREBASE_DATABASE_URL'
+];
+
+const missingEnvVars = requiredEnvVars.filter(
+  envVar => !process.env[envVar]
+);
+
+if (missingEnvVars.length > 0) {
+  console.error('Missing required Firebase environment variables:', missingEnvVars);
+  console.log('Available environment variables:', Object.keys(process.env).filter(key => key.startsWith('NEXT_PUBLIC_FIREBASE')));
+  throw new Error(`Missing required Firebase configuration: ${missingEnvVars.join(', ')}`);
 }
 
-const app = initializeApp(firebaseConfig);
-export const db = getDatabase(app);
+let app;
+let db;
+
+try {
+  app = initializeApp(firebaseConfig);
+  db = getDatabase(app);
+} catch (error) {
+  console.error('Firebase initialization error:', error);
+  throw error;
+}
+
+export { db };

@@ -1,10 +1,13 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Désactiver le mode strict temporairement pour éviter l'hydratation
-  reactStrictMode: false,
+  // Enable React strict mode for better development experience
+  reactStrictMode: true,
   
-  // Headers CORS pour l'API
+  // NO static export for Vercel - this was causing the main issue
+  // Remove: output: 'export' - this breaks Vercel's server-side features
+  
+  // Headers CORS for API
   async headers() {
     return [
       {
@@ -31,27 +34,39 @@ const nextConfig: NextConfig = {
         destination: '/admin',
         permanent: false,
       },
+      {
+        source: '/',
+        destination: '/admin',
+        permanent: false,
+      },
     ]
   },
   
-  // Configuration des images pour Vercel
+  // Images configuration for Vercel
   images: {
-    domains: ['vercel.app', 'localhost', 'firebase.app', 'web.app'],
+    domains: ['vercel.app', 'localhost', 'firebase.app', 'web.app', 'api.qrserver.com'],
     formats: ['image/avif', 'image/webp'],
+    dangerouslyAllowSVG: true,
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
   
-  // Optimisations pour Vercel
+  // Optimizations for Vercel
   swcMinify: true,
   poweredByHeader: false,
   
-  // Configuration TypeScript
+  // TypeScript configuration
   typescript: {
     ignoreBuildErrors: false,
   },
   
-  // Configuration ESLint
+  // ESLint configuration
   eslint: {
     ignoreDuringBuilds: false,
+  },
+  
+  // Experimental features for App Router
+  experimental: {
+    serverComponentsExternalPackages: ['firebase-admin'],
   },
 };
 
