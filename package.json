@@ -1,21 +1,26 @@
 {
-  "name": "twise-feedback",
+  "name": "universal-feedback-platform",
   "version": "2.0.0",
   "private": true,
-  "description": "Universal Feedback Platform with real-time analytics",
+  "description": "Universal Feedback Platform with AI-powered sentiment analysis and real-time analytics",
   "keywords": [
     "feedback",
     "analytics",
     "events",
-    "real-time"
+    "real-time",
+    "ai",
+    "sentiment-analysis",
+    "firebase",
+    "nextjs",
+    "express"
   ],
-  "author": "sambett",
+  "author": "Universal Feedback Platform",
   "license": "MIT",
+  "homepage": "https://github.com/your-repo/universal-feedback-platform",
   "repository": {
     "type": "git",
-    "url": "https://github.com/sambett/twise-feedback.git"
+    "url": "https://github.com/your-repo/universal-feedback-platform.git"
   },
-  "homepage": "https://sambett.github.io/twise-feedback",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -24,7 +29,11 @@
     "clean": "rimraf .next cache node_modules/.cache",
     "reset": "npm run clean && npm install",
     "backend:dev": "cd backend && npm run dev",
-    "full:dev": "concurrently \"npm run dev\" \"npm run backend:dev\""
+    "backend:start": "cd backend && npm start",
+    "full:dev": "concurrently --names \"FRONTEND,BACKEND\" --prefix-colors \"blue,green\" \"npm run dev\" \"npm run backend:dev\"",
+    "full:install": "npm install && cd backend && npm install && cd ..",
+    "test:api": "cd backend && npm test",
+    "health": "curl -f http://localhost:3001/health || echo 'Backend not running'"
   },
   "dependencies": {
     "@radix-ui/react-icons": "^1.3.2",

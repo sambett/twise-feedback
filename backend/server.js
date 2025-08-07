@@ -1,4 +1,4 @@
-// Universal Feedback Platform Backend with Local AI Sentiment Analysis
+// Universal Feedback Platform Backend with Firebase Integration
 // 100% Open Source - No API Keys Required
 
 import express from 'express';
@@ -8,7 +8,10 @@ import compression from 'compression';
 import dotenv from 'dotenv';
 import { RateLimiterMemory } from 'rate-limiter-flexible';
 
-// Import all feedback routes
+// Import Firebase configuration
+import { dbService } from './config/firebase-admin.js';
+
+// Import all routes
 import { 
   getFeedback, 
   submitFeedback, 
@@ -17,6 +20,20 @@ import {
   batchTestSentiment,
   clearFeedback
 } from './routes/feedback.js';
+
+import {
+  getAllEvents,
+  getEvent,
+  createEvent,
+  updateEvent,
+  deleteEvent
+} from './routes/events.js';
+
+import {
+  getEventAnalytics,
+  getRealtimeAnalytics,
+  getPlatformStats
+} from './routes/analytics.js';
 
 // Load environment variables
 dotenv.config({ path: '.env.local' });
@@ -114,7 +131,9 @@ app.use('/api', rateLimitMiddleware);
 // ====================================
 
 // Health check endpoint
-app.get('/health', (req, res) => {
+app.get('/health', async (req, res) => {
+  const firebaseStatus = dbService.getHealthStatus();
+  
   res.json({
     success: true,
     status: 'healthy',
@@ -127,7 +146,8 @@ app.get('/health', (req, res) => {
       sentimentAnalysis: true,
       localAI: true,
       requiresAPIKey: false,
-      multilingual: true
+      multilingual: true,
+      firebase: firebaseStatus
     }
   });
 });
@@ -138,21 +158,33 @@ app.get('/api', (req, res) => {
     success: true,
     name: 'Universal Feedback Platform API',
     version: '2.0.0',
-    description: 'Feedback collection with local AI sentiment analysis',
+    description: 'Feedback collection with Firebase and local AI sentiment analysis',
     features: [
       '✅ 100% Open Source',
-      '✅ No API Keys Required',
-      '✅ Runs Completely Offline',
-      '✅ Multilingual Support',
-      '✅ Real-time Sentiment Analysis',
-      '✅ Detailed Metrics & Analytics'
+      '✅ No API Keys Required', 
+      '✅ Firebase Integration',
+      '✅ Real-time Analytics',
+      '✅ Local AI Sentiment Analysis',
+      '✅ Multilingual Support'
     ],
     endpoints: {
+      events: {
+        'GET /api/events': 'Get all events',
+        'GET /api/events/:id': 'Get specific event',
+        'POST /api/events': 'Create new event',
+        'PUT /api/events/:id': 'Update event',
+        'DELETE /api/events/:id': 'Delete event'
+      },
       feedback: {
-        'GET /api/feedback': 'Get all feedback with filters',
+        'GET /api/feedback': 'Get feedback with optional filters',
         'POST /api/feedback': 'Submit new feedback with sentiment analysis',
-        'GET /api/feedback/stats': 'Get detailed statistics and metrics',
-        'DELETE /api/feedback/clear': 'Clear all feedback (testing only)'
+        'GET /api/feedback/stats': 'Get feedback statistics',
+        'DELETE /api/feedback/clear': 'Clear feedback (testing only)'
+      },
+      analytics: {
+        'GET /api/analytics/:eventId': 'Get detailed event analytics',
+        'GET /api/analytics/:eventId/realtime': 'Real-time updates via SSE',
+        'GET /api/analytics/platform/stats': 'Platform-wide statistics'
       },
       sentiment: {
         'POST /api/sentiment/test': 'Test sentiment analysis on any text',
@@ -164,23 +196,24 @@ app.get('/api', (req, res) => {
         'GET /api/metrics': 'Detailed performance metrics'
       }
     },
-    testingWithPostman: {
+    examples: {
+      createEvent: {
+        method: 'POST',
+        url: '/api/events',
+        body: {
+          title: 'My Event',
+          subtitle: 'Event description',
+          activities: ['Workshop', 'Presentation', 'Networking']
+        }
+      },
       submitFeedback: {
         method: 'POST',
-        url: 'http://localhost:3001/api/feedback',
+        url: '/api/feedback',
         body: {
           starRating: 5,
           activity: 'Workshop',
           comment: 'This was an amazing experience!',
-          eventId: 'event_001',
-          userName: 'John Doe'
-        }
-      },
-      testSentiment: {
-        method: 'POST',
-        url: 'http://localhost:3001/api/sentiment/test',
-        body: {
-          text: 'I really enjoyed this event!'
+          eventId: 'my-event'
         }
       }
     }
@@ -192,6 +225,7 @@ app.get('/api/metrics', async (req, res) => {
   try {
     const { getMetrics } = await import('./services/sentiment.js');
     const sentimentMetrics = getMetrics();
+    const firebaseStatus = dbService.getHealthStatus();
     
     res.json({
       success: true,
@@ -201,6 +235,7 @@ app.get('/api/metrics', async (req, res) => {
         version: '2.0.0',
         timestamp: new Date().toISOString()
       },
+      firebase: firebaseStatus,
       sentiment: sentimentMetrics
     });
   } catch (error) {
@@ -212,10 +247,19 @@ app.get('/api/metrics', async (req, res) => {
 });
 
 // ====================================
+// EVENT MANAGEMENT ROUTES
+// ====================================
+
+app.get('/api/events', getAllEvents);
+app.get('/api/events/:id', getEvent);
+app.post('/api/events', createEvent);
+app.put('/api/events/:id', updateEvent);
+app.delete('/api/events/:id', deleteEvent);
+
+// ====================================
 // FEEDBACK ROUTES
 // ====================================
 
-// Main feedback endpoints
 app.get('/api/feedback', getFeedback);
 app.post('/api/feedback', submitFeedback);
 app.get('/api/feedback/stats', getFeedbackStats);
@@ -225,10 +269,17 @@ app.delete('/api/feedback/clear', clearFeedback);
 app.get('/api/get-feedback', getFeedback);
 
 // ====================================
-// SENTIMENT ANALYSIS TEST ROUTES
+// ANALYTICS ROUTES
 // ====================================
 
-// Test sentiment analysis
+app.get('/api/analytics/:eventId', getEventAnalytics);
+app.get('/api/analytics/:eventId/realtime', getRealtimeAnalytics);
+app.get('/api/analytics/platform/stats', getPlatformStats);
+
+// ====================================
+// SENTIMENT ANALYSIS ROUTES
+// ====================================
+
 app.post('/api/sentiment/test', testSentiment);
 app.post('/api/sentiment/batch', batchTestSentiment);
 
@@ -283,11 +334,21 @@ const startServer = async () => {
     console.log('🚀 Starting Universal Feedback Platform...');
     console.log('📦 Loading modules...');
     
-    // Initialize sentiment analyzer
-    const { default: sentimentAnalyzer } = await import('./services/sentiment.js');
-    console.log('🤖 Initializing local AI (this may take a moment on first run)...');
+    // Check Firebase connection
+    const firebaseStatus = dbService.getHealthStatus();
+    if (firebaseStatus.available) {
+      console.log('✅ Firebase connection established');
+      console.log(`📊 Project: ${firebaseStatus.projectId}`);
+      console.log(`🔗 Database: ${firebaseStatus.databaseUrl}`);
+    } else {
+      console.warn('⚠️ Firebase connection failed - some features may be limited');
+    }
     
-    // Start server without waiting for model
+    // Initialize sentiment analyzer
+    console.log('🤖 Initializing local AI (this may take a moment on first run)...');
+    const { default: sentimentAnalyzer } = await import('./services/sentiment.js');
+    
+    // Start server
     const server = app.listen(PORT, () => {
       console.log('');
       console.log('═══════════════════════════════════════════════════════');
@@ -300,22 +361,18 @@ const startServer = async () => {
       console.log(`   📚 API Docs:   http://localhost:${PORT}/api`);
       console.log(`   📈 Metrics:    http://localhost:${PORT}/api/metrics`);
       console.log('');
-      console.log('🧪 Test with Postman:');
-      console.log(`   POST http://localhost:${PORT}/api/feedback`);
-      console.log('   Body: {');
-      console.log('     "starRating": 5,');
-      console.log('     "activity": "Workshop",');
-      console.log('     "comment": "Great event!"');
-      console.log('   }');
+      console.log('🏗️ Key Features:');
+      console.log('   📋 Event Management: Full CRUD operations');
+      console.log('   📝 Feedback System: With sentiment analysis');
+      console.log('   📊 Real-time Analytics: Live updates via SSE');
+      console.log('   🔥 Firebase Integration: Persistent data storage');
+      console.log('   🤖 Local AI: Sentiment analysis (no API keys!)');
       console.log('');
-      console.log('💡 Features:');
-      console.log('   ✅ 100% Open Source (No API Keys!)');
-      console.log('   ✅ Runs Completely Offline');
-      console.log('   ✅ Local AI Sentiment Analysis');
-      console.log('   ✅ Real-time Metrics & Analytics');
-      console.log('');
-      console.log('⏳ AI Model Status: Initializing in background...');
-      console.log('   (First request may be slower while model loads)');
+      console.log('🧪 Test Commands:');
+      console.log(`   curl -X GET http://localhost:${PORT}/api/events`);
+      console.log(`   curl -X POST http://localhost:${PORT}/api/events \\`);
+      console.log('     -H "Content-Type: application/json" \\');
+      console.log('     -d \'{"title":"Test Event","activities":["Workshop"]}\'');
       console.log('');
       console.log('═══════════════════════════════════════════════════════');
     });
