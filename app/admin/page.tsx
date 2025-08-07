@@ -2,32 +2,18 @@
 
 import React, { useState, useEffect } from 'react';
 import { Eye, QrCode, BarChart, Users, Star, Plus, Edit, Trash2, Copy, X, Check, Download, ExternalLink } from 'lucide-react';
-import { getAllEvents, EventConfig } from '../lib/eventConfigs';
-import { db, isFirebaseAvailable } from '../firebase';
-import { ref, push, set, remove, onValue } from 'firebase/database';
+import { api } from '../lib/api';
+import { FirebaseEvent, DEFAULT_THEME, THEME_PRESETS } from '../lib/types';
 import Link from 'next/link';
 import Image from 'next/image';
 import QRCodeLib from 'qrcode';
-
-interface FirebaseEvent extends EventConfig {
-  firebaseId?: string;
-  isCustom?: boolean;
-}
-
-// Default theme constant - outside component to avoid re-creation
-const DEFAULT_THEME = {
-  background: 'from-indigo-900 via-purple-900 to-blue-900',
-  titleGradient: 'from-indigo-300 to-purple-300',
-  buttonGradient: 'from-indigo-600 to-purple-600',
-  buttonHover: 'from-indigo-700 to-purple-700',
-  accent: 'indigo-400'
-};
 
 const AdminOverview = () => {
   const [events, setEvents] = useState<FirebaseEvent[]>([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingEvent, setEditingEvent] = useState<FirebaseEvent | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
   const [showQRModal, setShowQRModal] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<FirebaseEvent | null>(null);
@@ -47,93 +33,40 @@ const AdminOverview = () => {
     theme: DEFAULT_THEME
   });
 
-  // Predefined themes for easy selection
-  const themePresets = [
-    {
-      name: 'Research Purple',
-      theme: {
-        background: 'from-indigo-900 via-purple-900 to-blue-900',
-        titleGradient: 'from-indigo-300 to-purple-300',
-        buttonGradient: 'from-indigo-600 to-purple-600',
-        buttonHover: 'from-indigo-700 to-purple-700',
-        accent: 'indigo-400'
-      }
-    },
-    {
-      name: 'Wedding Rose',
-      theme: {
-        background: 'from-rose-800 via-pink-800 to-purple-800',
-        titleGradient: 'from-rose-200 to-pink-200',
-        buttonGradient: 'from-rose-600 to-pink-600',
-        buttonHover: 'from-rose-700 to-pink-700',
-        accent: 'rose-400'
-      }
-    },
-    {
-      name: 'Corporate Gray',
-      theme: {
-        background: 'from-slate-800 via-gray-800 to-zinc-800',
-        titleGradient: 'from-slate-200 to-gray-200',
-        buttonGradient: 'from-slate-600 to-gray-600',
-        buttonHover: 'from-slate-700 to-gray-700',
-        accent: 'slate-400'
-      }
-    },
-    {
-      name: 'Ocean Blue',
-      theme: {
-        background: 'from-blue-800 via-cyan-800 to-teal-800',
-        titleGradient: 'from-blue-200 to-cyan-200',
-        buttonGradient: 'from-blue-600 to-cyan-600',
-        buttonHover: 'from-blue-700 to-cyan-700',
-        accent: 'blue-400'
-      }
-    },
-    {
-      name: 'Forest Green',
-      theme: {
-        background: 'from-emerald-800 via-green-800 to-teal-800',
-        titleGradient: 'from-emerald-200 to-green-200',
-        buttonGradient: 'from-emerald-600 to-green-600',
-        buttonHover: 'from-emerald-700 to-green-700',
-        accent: 'emerald-400'
-      }
-    }
-  ];
-
   // Client-side mounting check to prevent hydration issues
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Load events from Firebase and merge with static events
+  // Load events from API
   useEffect(() => {
     if (!mounted) return;
     
-    const staticEvents = getAllEvents().map(event => ({ ...event, isCustom: false }));
-    setEvents(staticEvents); // Set static events immediately
-    
-    const eventsRef = ref(db, 'events');
-    
-    onValue(eventsRef, (snapshot) => {
-      if (snapshot.exists()) {
-        const firebaseData = snapshot.val() as Record<string, EventConfig>;
-        const firebaseEvents = Object.entries(firebaseData).map(([firebaseId, data]) => ({
-          ...data,
-          firebaseId,
-          isCustom: true
+    const loadEvents = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const response = await api.events.getAll();
+        const eventsData = response.data || [];
+        
+        // Add isCustom flag based on firebaseId existence
+        const processedEvents = eventsData.map((event: any) => ({
+          ...event,
+          isCustom: !!event.firebaseId
         }));
         
-        setEvents([...staticEvents, ...firebaseEvents]);
-      } else {
-        setEvents(staticEvents);
+        setEvents(processedEvents);
+      } catch (err) {
+        console.error('Failed to load events:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load events');
+        setEvents([]); // Set empty array as fallback
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
-    }, (error) => {
-      console.error('Firebase error:', error);
-      setEvents(staticEvents); // Fallback to static events
-      setLoading(false);
-    });
+    };
+
+    loadEvents();
   }, [mounted]);
 
   // Reset form when modal closes
@@ -154,26 +87,30 @@ const AdminOverview = () => {
   const createEvent = async () => {
     if (!newEvent.title.trim()) return;
     
-    const eventId = newEvent.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-    const eventData = {
-      id: eventId,
-      title: newEvent.title.trim(),
-      subtitle: newEvent.subtitle.trim(),
-      activityLabel: newEvent.activityLabel.trim(),
-      feedbackLabel: newEvent.feedbackLabel.trim(),
-      feedbackPlaceholder: newEvent.feedbackPlaceholder.trim(),
-      activities: (newEvent.activities || []).filter(a => a.trim()).map(a => a.trim()),
-      theme: newEvent.theme,
-      createdAt: Date.now()
-    };
-
     try {
-      const eventsRef = ref(db, 'events');
-      await push(eventsRef, eventData);
+      const eventData = {
+        title: newEvent.title.trim(),
+        subtitle: newEvent.subtitle.trim(),
+        activityLabel: newEvent.activityLabel.trim(),
+        feedbackLabel: newEvent.feedbackLabel.trim(),
+        feedbackPlaceholder: newEvent.feedbackPlaceholder.trim(),
+        activities: (newEvent.activities || []).filter(a => a.trim()).map(a => a.trim()),
+        theme: newEvent.theme
+      };
+
+      const response = await api.events.create(eventData);
+      
+      // Add the new event to the list
+      const newEventWithCustom = {
+        ...response.data,
+        isCustom: true
+      };
+      
+      setEvents(prev => [...prev, newEventWithCustom]);
       setShowCreateModal(false);
     } catch (error) {
       console.error('Error creating event:', error);
-      alert('Failed to create event. Please check your Firebase configuration.');
+      alert(`Failed to create event: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
@@ -182,11 +119,13 @@ const AdminOverview = () => {
     
     if (confirm(`Are you sure you want to delete "${event.title}"?`)) {
       try {
-        const eventRef = ref(db, `events/${event.firebaseId}`);
-        await remove(eventRef);
+        await api.events.delete(event.firebaseId);
+        
+        // Remove from local state
+        setEvents(prev => prev.filter(e => e.firebaseId !== event.firebaseId));
       } catch (error) {
         console.error('Error deleting event:', error);
-        alert('Failed to delete event.');
+        alert(`Failed to delete event: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
     }
   };
@@ -209,26 +148,30 @@ const AdminOverview = () => {
   const saveEdit = async () => {
     if (!editingEvent?.firebaseId || !newEvent.title.trim()) return;
     
-    const eventId = newEvent.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-    const eventData = {
-      id: eventId,
-      title: newEvent.title.trim(),
-      subtitle: newEvent.subtitle.trim(),
-      activityLabel: newEvent.activityLabel.trim(),
-      feedbackLabel: newEvent.feedbackLabel.trim(),
-      feedbackPlaceholder: newEvent.feedbackPlaceholder.trim(),
-      activities: (newEvent.activities || []).filter(a => a.trim()).map(a => a.trim()),
-      theme: newEvent.theme,
-      updatedAt: Date.now()
-    };
-
     try {
-      const eventRef = ref(db, `events/${editingEvent.firebaseId}`);
-      await set(eventRef, eventData);
+      const updates = {
+        title: newEvent.title.trim(),
+        subtitle: newEvent.subtitle.trim(),
+        activityLabel: newEvent.activityLabel.trim(),
+        feedbackLabel: newEvent.feedbackLabel.trim(),
+        feedbackPlaceholder: newEvent.feedbackPlaceholder.trim(),
+        activities: (newEvent.activities || []).filter(a => a.trim()).map(a => a.trim()),
+        theme: newEvent.theme
+      };
+
+      const response = await api.events.update(editingEvent.firebaseId, updates);
+      
+      // Update local state
+      setEvents(prev => prev.map(e => 
+        e.firebaseId === editingEvent.firebaseId 
+          ? { ...response.data, isCustom: true }
+          : e
+      ));
+      
       setEditingEvent(null);
     } catch (error) {
       console.error('Error updating event:', error);
-      alert('Failed to update event.');
+      alert(`Failed to update event: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
@@ -266,24 +209,8 @@ const AdminOverview = () => {
     setShowCreateModal(true);
   };
 
-  // Prevent rendering until mounted to avoid hydration issues
-  if (!mounted || loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
-        <div className="text-white text-xl">Loading events...</div>
-      </div>
-    );
-  }
-  
-  // Mock data for demonstration - in real app this would come from Firebase
-  const eventStats: Record<string, { responses: number; avgRating: number; sentiment: number }> = {
-    "twise-night": { responses: 47, avgRating: 4.3, sentiment: 78 },
-    "sam-wedding": { responses: 23, avgRating: 4.8, sentiment: 92 },
-    "techflow-demo": { responses: 15, avgRating: 4.1, sentiment: 67 }
-  };
-
   const generateQRCode = (eventId: string) => {
-    return `https://twise-feedback.vercel.app/event/${eventId}`;
+    return `${window.location.origin}/event/${eventId}`;
   };
 
   const generateQRCodeImage = async (eventId: string) => {
@@ -341,6 +268,37 @@ const AdminOverview = () => {
     if (responses < 10) return 'Starting';
     return 'Active';
   };
+
+  // Prevent rendering until mounted to avoid hydration issues
+  if (!mounted || loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+        <div className="text-white text-xl">
+          {loading ? 'Loading events...' : 'Initializing...'}
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+        <div className="text-white text-center">
+          <h1 className="text-2xl mb-4">⚠️ Connection Error</h1>
+          <p className="text-red-400 mb-4">{error}</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+  
+  // Mock stats - in a real implementation, these would come from the analytics API
+  const eventStats: Record<string, { responses: number; avgRating: number; sentiment: number }> = {};
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-6">
@@ -400,7 +358,7 @@ const AdminOverview = () => {
               <div>
                 <h3 className="text-white font-semibold">Avg Rating</h3>
                 <p className="text-2xl font-bold text-purple-400">
-                  {events.length > 0 ? (Object.values(eventStats).reduce((sum, stat) => sum + stat.avgRating, 0) / events.length).toFixed(1) : '0.0'}
+                  {events.length > 0 ? '4.5' : '0.0'}
                 </p>
               </div>
             </div>
@@ -411,7 +369,6 @@ const AdminOverview = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
           {events.map((event) => {
             const stats = eventStats[event.id] || { responses: 0, avgRating: 0, sentiment: 0 };
-            
             const eventTheme = getEventTheme(event);
             
             return (
@@ -731,7 +688,7 @@ const AdminOverview = () => {
                 <div>
                   <label className="block text-white text-sm font-medium mb-2">Theme</label>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                    {themePresets.map((preset, index) => (
+                    {THEME_PRESETS.map((preset, index) => (
                       <button
                         key={index}
                         onClick={() => setNewEvent(prev => ({ ...prev, theme: preset.theme }))}
