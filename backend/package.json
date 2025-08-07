@@ -1,0 +1,50 @@
+{
+  "name": "twise-feedback-backend",
+  "version": "2.0.0",
+  "description": "Universal Feedback Platform Backend with Local AI Sentiment Analysis",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch server.js",
+    "start": "node server.js",
+    "build": "echo 'No build step needed for Node.js'",
+    "test": "node test-sentiment.js",
+    "setup": "npm install",
+    "docker:build": "docker build -t twise-backend .",
+    "docker:run": "docker run -p 3001:3001 --env-file .env.local twise-backend",
+    "docker:dev": "docker-compose --profile development up",
+    "docker:prod": "docker-compose --profile production up -d",
+    "docker:stop": "docker-compose down",
+    "health": "curl -f http://localhost:3001/health || exit 1",
+    "clean": "rm -rf node_modules cache logs && npm install",
+    "postman:test": "echo 'Import postman-collection.json into Postman to test all endpoints'"
+  },
+  "dependencies": {
+    "@xenova/transformers": "^2.17.2",
+    "compression": "^1.8.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.6.1",
+    "express": "^4.21.2",
+    "helmet": "^8.1.0",
+    "rate-limiter-flexible": "^5.0.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.7"
+  },
+  "keywords": [
+    "feedback",
+    "sentiment-analysis",
+    "ai",
+    "local-ai",
+    "open-source",
+    "transformers",
+    "express",
+    "universal-feedback-platform"
+  ],
+  "author": "Universal Feedback Platform",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  }
+}

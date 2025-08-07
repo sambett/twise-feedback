@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, use } from 'react';
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Users, Star, TrendingUp, MessageSquare, ArrowLeft } from 'lucide-react';
+import { Users, Star, TrendingUp, MessageSquare, ArrowLeft, Wifi, WifiOff, AlertCircle } from 'lucide-react';
 import { getEventConfig, EventConfig } from '../../lib/eventConfigs';
 import { ref, onValue } from 'firebase/database';
 import { db } from '../../firebase';
@@ -15,6 +15,14 @@ interface FeedbackItem {
   feedback: string;
   sentiment: 'pos' | 'neg' | 'neu' | 'POSITIVE' | 'NEGATIVE' | 'NEUTRAL';
   timestamp: string;
+  // 🆕 Enhanced fields from AI backend
+  confidence?: number;
+  language_detected?: string;
+  ai_powered?: boolean;
+  model?: string;
+  provider?: string;
+  entities?: string[] | Array<{name: string}>;
+  key_phrases?: string[];
 }
 
 interface ActivityStats {
@@ -30,6 +38,11 @@ interface DashboardStats {
   averageRating: number;
   sentimentScore: number;
   totalFeedback: number;
+  // 🆕 Enhanced AI stats
+  averageConfidence?: number;
+  languageDistribution?: Record<string, number>;
+  aiPoweredCount?: number;
+  providerDistribution?: Record<string, number>;
 }
 
 interface EventAdminProps {
@@ -37,6 +50,9 @@ interface EventAdminProps {
     eventId: string;
   }>;
 }
+
+// AI Backend URL - REQUIRED for operation
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
 
 export default function EventAdminDashboard({ params }: EventAdminProps) {
   // Unwrap the params Promise using React.use()
@@ -47,6 +63,7 @@ export default function EventAdminDashboard({ params }: EventAdminProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [mounted, setMounted] = useState(false);
+  const [backendStatus, setBackendStatus] = useState<'connected' | 'disconnected' | 'checking'>('checking');
   
   // Client-side mounting check to prevent hydration issues
   useEffect(() => {
@@ -90,27 +107,62 @@ export default function EventAdminDashboard({ params }: EventAdminProps) {
     });
   }, [resolvedParams.eventId, mounted]);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await fetch(`/api/get-feedback?eventId=${resolvedParams.eventId}`);
-        if (!response.ok) throw new Error('Failed to fetch data');
-        const feedbackArray = await response.json();
-
-        setFeedbackData(feedbackArray);
-        setError('');
-      } catch (err) {
-        setError('Failed to load feedback data');
-        console.error('Error:', err);
-      } finally {
-        setLoading(false);
+  // Check backend status and fetch data
+  const checkBackendAndFetchData = async () => {
+    try {
+      setBackendStatus('checking');
+      
+      // Check backend health
+      const healthResponse = await fetch(`${BACKEND_URL}/health`, { 
+        method: 'GET',
+        signal: AbortSignal.timeout(5000)
+      });
+      
+      if (!healthResponse.ok) {
+        throw new Error(`Backend health check failed: ${healthResponse.status}`);
       }
-    };
+      
+      const healthData = await healthResponse.json();
+      if (!healthData.success) {
+        throw new Error('Backend is not healthy');
+      }
+      
+      setBackendStatus('connected');
+      console.log('🤖 AI Backend is available, fetching feedback data...');
+      
+      // Fetch feedback data from AI backend
+      const feedbackResponse = await fetch(`${BACKEND_URL}/api/feedback?eventId=${resolvedParams.eventId}&limit=100`);
+      
+      if (!feedbackResponse.ok) {
+        throw new Error(`Failed to fetch feedback: ${feedbackResponse.status}`);
+      }
+      
+      const data = await feedbackResponse.json();
+      const feedbackArray = data.feedback || data; // Handle both response formats
+      
+      console.log('✅ Loaded feedback from AI backend:', feedbackArray.length, 'items');
+      setFeedbackData(feedbackArray);
+      setError('');
+      
+    } catch (err) {
+      console.error('❌ AI Backend error:', err);
+      setBackendStatus('disconnected');
+      setError('AI Backend is required for this dashboard. Please start the backend server.');
+      setFeedbackData([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    fetchData();
-    const interval = setInterval(fetchData, 5000);
+  useEffect(() => {
+    if (!mounted) return;
+    
+    checkBackendAndFetchData();
+    
+    // Poll for updates every 10 seconds
+    const interval = setInterval(checkBackendAndFetchData, 10000);
     return () => clearInterval(interval);
-  }, [resolvedParams.eventId]);
+  }, [resolvedParams.eventId, mounted]);
 
   const normalizeDataToPositiveNeutralNegative = (data: FeedbackItem[]) => {
     return data.map(item => ({
@@ -123,12 +175,29 @@ export default function EventAdminDashboard({ params }: EventAdminProps) {
 
   const normalizedData = normalizeDataToPositiveNeutralNegative(feedbackData);
 
-  // Process data for stats
+  // Process data for stats with enhanced AI metrics
   const stats: DashboardStats = {
     totalParticipants: normalizedData.length,
     averageRating: normalizedData.reduce((acc, curr) => acc + curr.rating, 0) / normalizedData.length || 0,
     sentimentScore: (normalizedData.filter(item => item.sentiment === 'POSITIVE').length / normalizedData.length) * 100 || 0,
-    totalFeedback: normalizedData.length
+    totalFeedback: normalizedData.length,
+    // 🆕 Enhanced AI stats
+    averageConfidence: normalizedData.filter(item => item.confidence !== undefined).length > 0 
+      ? normalizedData.reduce((acc, curr) => acc + (curr.confidence || 0), 0) / normalizedData.filter(item => item.confidence !== undefined).length
+      : undefined,
+    languageDistribution: normalizedData.reduce((acc, curr) => {
+      if (curr.language_detected) {
+        acc[curr.language_detected] = (acc[curr.language_detected] || 0) + 1;
+      }
+      return acc;
+    }, {} as Record<string, number>),
+    aiPoweredCount: normalizedData.filter(item => item.ai_powered).length,
+    providerDistribution: normalizedData.reduce((acc, curr) => {
+      if (curr.provider) {
+        acc[curr.provider] = (acc[curr.provider] || 0) + 1;
+      }
+      return acc;
+    }, {} as Record<string, number>)
   };
 
   // Process activities data
@@ -174,15 +243,87 @@ export default function EventAdminDashboard({ params }: EventAdminProps) {
   if (!mounted || !eventConfig || loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-blue-900 p-6 flex items-center justify-center">
-        <div className="text-white text-xl">Loading dashboard...</div>
+        <div className="text-white text-xl flex items-center gap-3">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+          Loading AI-powered dashboard...
+        </div>
       </div>
     );
   }
 
-  if (error) {
+  // Show backend error screen
+  if (error && backendStatus === 'disconnected') {
     return (
-      <div className={`min-h-screen bg-gradient-to-br ${eventConfig.theme.background} p-6 flex items-center justify-center`}>
-        <div className="text-red-400 text-xl">{error}</div>
+      <div className={`min-h-screen bg-gradient-to-br ${eventConfig.theme.background} p-6`}>
+        <div className="max-w-4xl mx-auto">
+          {/* Header */}
+          <div className="flex items-center gap-4 mb-8">
+            <Link 
+              href="/admin" 
+              className="text-white/70 hover:text-white transition-colors"
+            >
+              <ArrowLeft className="w-6 h-6" />
+            </Link>
+            <div>
+              <h1 className={`text-4xl font-bold bg-gradient-to-r ${eventConfig.theme.titleGradient} bg-clip-text text-transparent`}>
+                {eventConfig.title} Dashboard
+              </h1>
+              <p className="text-gray-400 mt-1">AI-powered analytics</p>
+            </div>
+          </div>
+
+          {/* Error Card */}
+          <div className="bg-red-500/10 backdrop-blur-xl border border-red-500/30 rounded-lg p-8">
+            <div className="text-center space-y-6">
+              <div className="flex justify-center">
+                <div className="bg-red-500/20 p-4 rounded-full">
+                  <AlertCircle className="w-12 h-12 text-red-400" />
+                </div>
+              </div>
+              
+              <div className="space-y-3">
+                <h2 className="text-2xl font-bold text-red-400">AI Backend Required</h2>
+                <p className="text-gray-300 max-w-md mx-auto">
+                  This dashboard requires the AI-powered backend to display feedback analytics with sentiment analysis, confidence scores, and language detection.
+                </p>
+              </div>
+
+              <div className="bg-gray-900/50 rounded-lg p-6 text-left max-w-md mx-auto space-y-4">
+                <div className="text-yellow-400 font-semibold">To start the AI backend:</div>
+                
+                <div className="space-y-2">
+                  <div className="text-sm text-gray-400">Option 1: Use the master startup script</div>
+                  <div className="bg-black/40 rounded p-3 font-mono text-sm text-green-400">
+                    start.bat
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="text-sm text-gray-400">Option 2: Manual backend start</div>
+                  <div className="bg-black/40 rounded p-3 font-mono text-sm text-green-400">
+                    cd backend<br/>
+                    npm run dev
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-4 justify-center">
+                <button
+                  onClick={() => window.location.reload()}
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
+                >
+                  Check Connection
+                </button>
+                <Link
+                  href="/admin"
+                  className="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
+                >
+                  Back to Admin
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -190,7 +331,7 @@ export default function EventAdminDashboard({ params }: EventAdminProps) {
   return (
     <div className={`min-h-screen bg-gradient-to-br ${eventConfig.theme.background} p-6`}>
       <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
+        {/* Header with AI Backend Status */}
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-4">
             <Link 
@@ -203,37 +344,64 @@ export default function EventAdminDashboard({ params }: EventAdminProps) {
               <h1 className={`text-4xl font-bold bg-gradient-to-r ${eventConfig.theme.titleGradient} bg-clip-text text-transparent`}>
                 {eventConfig.title} Dashboard
               </h1>
-              <p className="text-gray-400 mt-1">Real-time feedback analysis</p>
+              <p className="text-gray-400 mt-1">AI-powered real-time analytics</p>
             </div>
           </div>
-          <div className={`px-4 py-2 bg-gradient-to-r ${eventConfig.theme.buttonGradient} rounded-lg text-white font-medium`}>
-            Live
+          <div className="flex items-center gap-4">
+            {/* AI Backend Status Indicator */}
+            <div className={`px-4 py-2 rounded-lg text-white font-medium flex items-center gap-2 ${
+              backendStatus === 'connected' 
+                ? 'bg-green-600/20 text-green-400' 
+                : backendStatus === 'disconnected' 
+                  ? 'bg-red-600/20 text-red-400'
+                  : 'bg-yellow-600/20 text-yellow-400'
+            }`}>
+              {backendStatus === 'connected' ? (
+                <>
+                  <Wifi className="w-4 h-4" />
+                  AI Backend Connected
+                </>
+              ) : backendStatus === 'disconnected' ? (
+                <>
+                  <WifiOff className="w-4 h-4" />
+                  Backend Offline
+                </>
+              ) : (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                  Connecting...
+                </>
+              )}
+            </div>
+            <div className={`px-4 py-2 bg-gradient-to-r ${eventConfig.theme.buttonGradient} rounded-lg text-white font-medium`}>
+              Live Updates
+            </div>
           </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* Enhanced Stats Cards with AI Metrics */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6">
           <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-lg p-6">
             <div className="flex items-center justify-between pb-2">
-              <h3 className="text-sm font-medium text-gray-200">Total Participants</h3>
+              <h3 className="text-sm font-medium text-gray-200">Participants</h3>
               <Users className={`h-4 w-4 text-${eventConfig.theme.accent}`} />
             </div>
             <div className="text-2xl font-bold text-white">{stats.totalParticipants}</div>
-            <p className="text-xs text-gray-400">Across all activities</p>
+            <p className="text-xs text-gray-400">Total responses</p>
           </div>
 
           <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-lg p-6">
             <div className="flex items-center justify-between pb-2">
-              <h3 className="text-sm font-medium text-gray-200">Average Rating</h3>
+              <h3 className="text-sm font-medium text-gray-200">Avg Rating</h3>
               <Star className={`h-4 w-4 text-${eventConfig.theme.accent}`} />
             </div>
             <div className="text-2xl font-bold text-white">{stats.averageRating.toFixed(1)}</div>
-            <p className="text-xs text-gray-400">From all feedback</p>
+            <p className="text-xs text-gray-400">Out of 5 stars</p>
           </div>
 
           <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-lg p-6">
             <div className="flex items-center justify-between pb-2">
-              <h3 className="text-sm font-medium text-gray-200">Sentiment Score</h3>
+              <h3 className="text-sm font-medium text-gray-200">Sentiment</h3>
               <TrendingUp className={`h-4 w-4 text-${eventConfig.theme.accent}`} />
             </div>
             <div className="text-2xl font-bold text-white">{Math.round(stats.sentimentScore)}%</div>
@@ -242,11 +410,33 @@ export default function EventAdminDashboard({ params }: EventAdminProps) {
 
           <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-lg p-6">
             <div className="flex items-center justify-between pb-2">
-              <h3 className="text-sm font-medium text-gray-200">Total Feedback</h3>
+              <h3 className="text-sm font-medium text-gray-200">AI Confidence</h3>
+              <div className="text-purple-400">🤖</div>
+            </div>
+            <div className="text-2xl font-bold text-white">
+              {stats.averageConfidence ? `${Math.round(stats.averageConfidence * 100)}%` : 'N/A'}
+            </div>
+            <p className="text-xs text-gray-400">Analysis certainty</p>
+          </div>
+
+          <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-lg p-6">
+            <div className="flex items-center justify-between pb-2">
+              <h3 className="text-sm font-medium text-gray-200">Languages</h3>
+              <div className="text-blue-400">🌍</div>
+            </div>
+            <div className="text-2xl font-bold text-white">
+              {stats.languageDistribution ? Object.keys(stats.languageDistribution).length : 0}
+            </div>
+            <p className="text-xs text-gray-400">Detected languages</p>
+          </div>
+
+          <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-lg p-6">
+            <div className="flex items-center justify-between pb-2">
+              <h3 className="text-sm font-medium text-gray-200">AI Powered</h3>
               <MessageSquare className={`h-4 w-4 text-${eventConfig.theme.accent}`} />
             </div>
-            <div className="text-2xl font-bold text-white">{stats.totalFeedback}</div>
-            <p className="text-xs text-gray-400">Responses collected</p>
+            <div className="text-2xl font-bold text-white">{stats.aiPoweredCount || 0}</div>
+            <p className="text-xs text-gray-400">AI-analyzed responses</p>
           </div>
         </div>
 
@@ -286,7 +476,7 @@ export default function EventAdminDashboard({ params }: EventAdminProps) {
 
           {/* Sentiment Distribution Chart */}
           <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-lg p-6">
-            <h3 className="text-gray-200 text-xl font-semibold mb-4">Sentiment Distribution</h3>
+            <h3 className="text-gray-200 text-xl font-semibold mb-4">AI Sentiment Analysis</h3>
             <div className="h-96">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -314,9 +504,45 @@ export default function EventAdminDashboard({ params }: EventAdminProps) {
           </div>
         </div>
 
-        {/* Recent Feedback Table */}
+        {/* Language Distribution (AI Feature) */}
+        {stats.languageDistribution && Object.keys(stats.languageDistribution).length > 0 && (
+          <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-lg p-6">
+            <h3 className="text-gray-200 text-xl font-semibold mb-4">🌍 Language Distribution (AI-Detected)</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+              {Object.entries(stats.languageDistribution).map(([lang, count]) => (
+                <div key={lang} className="text-center bg-white/5 rounded-lg p-4">
+                  <div className="text-2xl font-bold text-white">{count}</div>
+                  <div className="text-sm text-gray-400 uppercase">{lang}</div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    {Math.round((count / stats.totalFeedback) * 100)}%
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* AI Provider Distribution */}
+        {stats.providerDistribution && Object.keys(stats.providerDistribution).length > 0 && (
+          <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-lg p-6">
+            <h3 className="text-gray-200 text-xl font-semibold mb-4">🤖 AI Provider Usage</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {Object.entries(stats.providerDistribution).map(([provider, count]) => (
+                <div key={provider} className="text-center bg-white/5 rounded-lg p-4">
+                  <div className="text-xl font-bold text-purple-400">{count}</div>
+                  <div className="text-sm text-gray-300 capitalize">{provider}</div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    {Math.round((count / stats.totalFeedback) * 100)}%
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Enhanced Recent Feedback Table */}
         <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-lg p-6">
-          <h3 className="text-gray-200 text-xl font-semibold mb-4">Recent Feedback</h3>
+          <h3 className="text-gray-200 text-xl font-semibold mb-4">🤖 Recent AI-Analyzed Feedback</h3>
           <div className="relative overflow-x-auto rounded-lg">
             <table className="w-full text-sm text-left text-gray-300">
               <thead className="text-xs uppercase bg-black/20">
@@ -324,7 +550,8 @@ export default function EventAdminDashboard({ params }: EventAdminProps) {
                   <th className="px-6 py-3 rounded-tl-lg">Activity</th>
                   <th className="px-6 py-3">Rating</th>
                   <th className="px-6 py-3">Feedback</th>
-                  <th className="px-6 py-3">Sentiment</th>
+                  <th className="px-6 py-3">AI Analysis</th>
+                  <th className="px-6 py-3">Details</th>
                   <th className="px-6 py-3 rounded-tr-lg">Time</th>
                 </tr>
               </thead>
@@ -338,7 +565,11 @@ export default function EventAdminDashboard({ params }: EventAdminProps) {
                         {item.rating}
                       </div>
                     </td>
-                    <td className="px-6 py-4 max-w-xs truncate">{item.feedback}</td>
+                    <td className="px-6 py-4 max-w-xs">
+                      <div className="truncate" title={item.feedback}>
+                        {item.feedback}
+                      </div>
+                    </td>
                     <td className="px-6 py-4">
                       <span className={`px-3 py-1 rounded-full text-xs ${
                         item.sentiment === 'POSITIVE' ? 'bg-green-500/20 text-green-400' :
@@ -347,6 +578,28 @@ export default function EventAdminDashboard({ params }: EventAdminProps) {
                       }`}>
                         {item.sentiment.toLowerCase()}
                       </span>
+                      {item.confidence && (
+                        <div className="text-xs text-gray-400 mt-1">
+                          {Math.round(item.confidence * 100)}% confident
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="text-xs space-y-1">
+                        <div className="text-purple-400">
+                          {item.model || item.provider || 'AI'} 
+                        </div>
+                        {item.language_detected && (
+                          <div className="text-blue-400">
+                            {item.language_detected.toUpperCase()}
+                          </div>
+                        )}
+                        {item.entities && item.entities.length > 0 && (
+                          <div className="text-green-400 text-xs">
+                            Entities: {item.entities.slice(0, 2).map(e => typeof e === 'string' ? e : e.name).join(', ')}
+                          </div>
+                        )}
+                      </div>
                     </td>
                     <td className="px-6 py-4 text-gray-400">
                       {new Date(item.timestamp).toLocaleTimeString()}

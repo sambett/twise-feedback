@@ -1,0 +1,180 @@
+# ================================
+# NODE.JS & NPM
+# ================================
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+
+# nyc test coverage
+.nyc_output
+
+# ================================
+# ENVIRONMENT & SECRETS
+# ================================
+# Environment files (contains API keys and secrets)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Google Cloud service account keys
+*.json
+!package*.json
+service-account-*.json
+google-cloud-key*.json
+
+# Firebase private keys
+firebase-adminsdk-*.json
+
+# ================================
+# LOGS & CACHE
+# ================================
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Cache directories
+cache/
+.cache/
+.npm
+.eslintcache
+.parcel-cache
+
+# AI model cache
+transformers-cache/
+huggingface-cache/
+
+# ================================
+# DOCKER & CONTAINERS
+# ================================
+# Docker
+.dockerignore
+docker-compose.override.yml
+
+# Kubernetes
+*.k8s.yaml
+k8s-secrets/
+
+# ================================
+# DEVELOPMENT & TESTING
+# ================================
+# Testing
+coverage/
+test-results/
+*.test.js.snap
+
+# Development files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# ================================
+# PRODUCTION & DEPLOYMENT
+# ================================
+# Build outputs
+build/
+dist/
+.next/
+out/
+
+# Production logs
+production.log
+error.log
+access.log
+
+# SSL certificates
+ssl/
+*.pem
+*.crt
+*.key
+
+# Database dumps
+*.sql
+*.db
+
+# ================================
+# MONITORING & ANALYTICS
+# ================================
+# Monitoring data
+prometheus-data/
+grafana-data/
+monitoring/data/
+
+# Performance reports
+lighthouse-reports/
+benchmark-results/
+
+# ================================
+# TEMPORARY FILES
+# ================================
+# Temporary directories
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Editor temporary files
+*~
+.#*
+#*#
+
+# ================================
+# SPECIFIC TO THIS PROJECT
+# ================================
+# AI provider specific caches
+.openai-cache/
+.huggingface-cache/
+.google-cloud-cache/
+
+# Local test data
+test-data/
+sample-feedback/
+
+# Local configuration overrides
+local-config.json
+custom-settings.js
+
+# Backup files
+*.backup
+*.bak
+backup-*
+
+# ================================
+# ALWAYS INCLUDE THESE FILES
+# ================================
+# Make sure these important files are NOT ignored
+!.env.example
+!README.md
+!package.json
+!package-lock.json
+!Dockerfile
+!docker-compose.yml
+!.dockerignore

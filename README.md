@@ -1,125 +1,280 @@
-# 🧠 AI-Powered Feedback Platform
+# Universal Feedback Platform
 
-> **Vibe coding a feedback system with real AI sentiment analysis**
+A modern feedback collection platform with **AI-powered sentiment analysis** for events, featuring real-time analytics and multilingual support.
 
-A feedback collection platform that actually uses **real AI** for sentiment analysis instead of dumb keyword matching.
+## ✨ Key Features
 
-## 🎯 **The Core Feature: Smart AI Sentiment**
+- **🤖 Local AI Sentiment Analysis** - Analyzes feedback comments using open-source AI (no API keys needed!)
+- **⭐ Star Rating System** - 1-5 star ratings for quick feedback
+- **📊 Real-time Analytics Dashboard** - Monitor feedback and sentiment in real-time
+- **🌍 Multilingual Support** - Works with English, French, Spanish, and more
+- **📱 QR Code Integration** - Easy access to feedback forms via QR codes
+- **🔒 Privacy-First** - All processing happens locally, no external APIs
 
-**Before (trash):** Simple keyword matching like `if text.includes('good') → positive` 🤮
+## 🏗️ Architecture
 
-**Now (smart):** DistilBERT multilingual AI model that actually understands context, sarcasm, and mixed emotions 🧠
+```
+twise/
+├── app/                   # Next.js frontend application
+│   ├── admin/            # Admin dashboard for analytics
+│   ├── event/            # Event feedback pages
+│   ├── qr/               # QR code generation
+│   └── lib/              # Utility functions
+├── backend/              # Express.js backend with AI
+│   ├── routes/           # API endpoints
+│   │   └── feedback.js   # Feedback management with sentiment
+│   ├── services/         # Core services
+│   │   └── sentiment.js  # Local AI sentiment analyzer
+│   └── server.js         # Main server file
+└── public/               # Static assets
+```
 
-### **AI Specs:**
-- **Model**: DistilBERT Multilingual Sentiment
-- **Languages**: French, English, 100+ others
-- **Accuracy**: ~95% vs ~60% keyword matching
-- **Speed**: ~50ms per analysis
-- **Privacy**: Runs locally, no external APIs
+## 🚀 Quick Start
 
----
+### Prerequisites
 
-## 🚀 **Quick Start**
+- Node.js 20.0.0 or higher
+- npm 10.0.0 or higher
+- 500MB free disk space (for AI model)
 
+### Installation & Setup
+
+1. **Clone and install:**
 ```bash
-# Clone and install
-git clone https://github.com/sambett/twise-feedback.git
-cd twise-feedback
+# Install frontend dependencies
 npm install
 
-# Start the platform
+# Install backend dependencies
+cd backend
+npm install
+```
+
+2. **Start the application:**
+```bash
+# Option 1: Run everything at once
+npm run full:dev
+
+# Option 2: Run separately
+# Terminal 1 - Frontend (http://localhost:3000)
 npm run dev
 
-# Test AI sentiment (optional)
-npx tsx test-ai.ts
+# Terminal 2 - Backend (http://localhost:3001)
+cd backend
+npm run dev
 ```
 
-**Visit:** http://localhost:3000/admin
+3. **First run notes:**
+- The AI model will download on first use (~250MB)
+- First sentiment analysis may take 10-15 seconds
+- Subsequent analyses are near-instant (<100ms)
 
----
+## 📝 How It Works
 
-## 🎨 **What You Get**
+### Feedback Flow
 
-### **📊 Real-Time Dashboard**
-- Live sentiment tracking with AI insights
-- Multiple event themes (research, wedding, corporate)
-- Real-time analytics and charts
+1. **User submits feedback** with:
+   - Star rating (1-5)
+   - Activity selection (Workshop, Presentation, etc.)
+   - Optional comment
 
-### **📱 Feedback Forms**
-- QR code generation for easy access
-- Mobile-responsive design
-- AI processes every submission
+2. **Backend processes feedback**:
+   - Analyzes comment sentiment using local AI
+   - Classifies as positive, negative, or neutral
+   - Calculates confidence score
+   - Detects language automatically
 
-### **🧠 AI-Powered Analytics**
-- Context-aware sentiment analysis
-- Handles sarcasm and mixed emotions
-- Multilingual support (French/English)
-- Confidence scoring
+3. **Data stored with enrichment**:
+   - Original feedback + sentiment analysis
+   - Timestamp and metadata
+   - Ready for analytics
 
----
+4. **Admin dashboard shows**:
+   - Real-time feedback stream
+   - Sentiment distribution charts
+   - Activity-based analytics
+   - Time-based trends
 
-## 🧪 **Testing the AI**
+## 🧪 Testing
+
+### Test the Backend API
 
 ```bash
-# Test different sentiment examples
-npx tsx test-ai.ts
-
-# Examples it handles well:
-# ✅ "This was amazing!" → POSITIVE (95%)
-# ✅ "Terrible presentation" → NEGATIVE (89%)  
-# ✅ "It was okay I guess" → NEUTRAL (72%)
-# ✅ "Great content but boring speaker" → Mixed analysis
+cd backend
+npm test
 ```
 
----
+### Test with Postman
 
-## 🛠️ **Tech Stack**
+1. Import `backend/postman-collection.json` into Postman
+2. Run the collection to test all endpoints
+3. Example requests included for all features
 
-- **Frontend**: Next.js 15 + React 19 + Tailwind
-- **AI**: Transformers.js + DistilBERT model  
-- **Database**: Firebase Realtime DB
-- **Backend**: Next.js API + optional Python Flask
+### Manual API Test
 
----
+```bash
+# Submit feedback with sentiment analysis
+curl -X POST http://localhost:3001/api/feedback \
+  -H "Content-Type: application/json" \
+  -d '{
+    "starRating": 5,
+    "activity": "Workshop",
+    "comment": "This was absolutely amazing! Learned so much!",
+    "eventId": "test_event"
+  }'
 
-## 📊 **AI vs Rule-Based Comparison**
-
-| Feature | Old (Keywords) | New (AI) |
-|---------|----------------|----------|
-| Accuracy | 60% | 95% |
-| Context | ❌ | ✅ |
-| Sarcasm | ❌ | ✅ |
-| Languages | 2 | 100+ |
-| Mixed Sentiment | ❌ | ✅ |
-
----
-
-## 🎯 **Demo**
-
-**Live Demo**: https://twise-feedback.vercel.app/
-
-**Test Routes:**
-- Admin: `/admin` 
-- Wedding: `/event/sam-wedding`
-- Corporate: `/event/techflow-demo`
-- QR Codes: `/qr/[eventId]`
-
----
-
-## 🔧 **Customization**
-
-Add new events in `app/lib/eventConfigs.ts`:
-
-```typescript
-"your-event": {
-  title: "Your Event",
-  activities: ["Thing 1", "Thing 2"],
-  theme: { /* custom colors */ }
+# Response includes sentiment analysis:
+{
+  "success": true,
+  "data": {
+    "id": "feedback_1",
+    "starRating": 5,
+    "activity": "Workshop",
+    "comment": "This was absolutely amazing! Learned so much!",
+    "sentiment": "positive",
+    "sentimentScore": 0.98,
+    "sentimentConfidence": 0.99,
+    "language": "en",
+    ...
+  }
 }
 ```
 
-The AI will automatically analyze sentiment for any event type.
+## 📊 API Endpoints
 
----
+### Core Endpoints
 
-**🧠 Built with real AI • 📊 Live analytics • 🎨 Multiple themes • 📱 Mobile ready**
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/health` | Server health check |
+| GET | `/api` | API documentation |
+| GET | `/api/metrics` | Performance metrics |
+| **POST** | **/api/feedback** | **Submit feedback (with AI sentiment)** |
+| GET | `/api/feedback` | Get all feedback |
+| GET | `/api/feedback/stats` | Analytics & statistics |
+| POST | `/api/sentiment/test` | Test sentiment analyzer |
+
+## 🤖 Sentiment Analysis Details
+
+The platform uses **Transformers.js** with **DistilBERT** for sentiment analysis:
+
+- **100% Open Source** - No API keys or costs
+- **Runs Locally** - Complete privacy, no external calls
+- **Multilingual** - Supports EN, FR, ES, DE, and more
+- **Fast** - <100ms per analysis after warmup
+- **Accurate** - State-of-the-art transformer model
+
+### Sentiment Categories
+
+- **Positive** 😊 - Confidence > 0.6, positive sentiment
+- **Negative** 😞 - Confidence > 0.6, negative sentiment  
+- **Neutral** 😐 - Low confidence or mixed signals
+
+## 📈 Metrics & Monitoring
+
+Visit `http://localhost:3001/api/metrics` for:
+
+- Total analyses performed
+- Average processing time
+- Model status and health
+- Memory usage
+- Uptime statistics
+
+## 🔧 Configuration
+
+Create `backend/.env.local`:
+
+```env
+# Server
+PORT=3001
+NODE_ENV=development
+
+# CORS
+CORS_ORIGIN=http://localhost:3000,*
+
+# Rate Limiting
+RATE_LIMIT_REQUESTS_PER_MINUTE=100
+
+# Features
+ENABLE_SENTIMENT_ANALYSIS=true
+ENABLE_METRICS=true
+```
+
+## 📦 Dependencies
+
+### Frontend
+- Next.js 15 - React framework
+- Recharts - Data visualization
+- Lucide React - Icons
+- QRCode - QR generation
+
+### Backend
+- Express.js - Web server
+- @xenova/transformers - Local AI models
+- Helmet - Security headers
+- CORS - Cross-origin support
+- Rate-limiter-flexible - API protection
+
+## 🚀 Production Deployment
+
+1. **Build frontend:**
+```bash
+npm run build
+npm start
+```
+
+2. **Run backend:**
+```bash
+cd backend
+NODE_ENV=production npm start
+```
+
+3. **Use PM2 for process management:**
+```bash
+pm2 start backend/server.js --name feedback-api
+pm2 start npm --name feedback-ui -- start
+```
+
+## 🐳 Docker Support
+
+```bash
+# Backend
+cd backend
+docker build -t feedback-backend .
+docker run -p 3001:3001 feedback-backend
+
+# Full stack with docker-compose
+docker-compose up
+```
+
+## 📄 License
+
+MIT License - Free for any use
+
+## 🆘 Troubleshooting
+
+### AI Model Not Loading
+- Ensure 500MB free disk space
+- Check internet for first download
+- Clear `backend/cache` folder
+
+### CORS Errors
+- Add your URL to `CORS_ORIGIN` in `.env.local`
+- Use `CORS_ORIGIN=*` for development
+
+### High Memory Usage
+- Normal during model initialization
+- Stabilizes at ~300-400MB
+- Use PM2 for auto-restart if needed
+
+## 👥 Contributing
+
+1. Fork the repository
+2. Create feature branch
+3. Add tests for new features
+4. Submit pull request
+
+## 📞 Support
+
+- API Docs: http://localhost:3001/api
+- Health Check: http://localhost:3001/health
+- Run Tests: `cd backend && npm test`

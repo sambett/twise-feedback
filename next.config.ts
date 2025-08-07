@@ -1,13 +1,43 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Enable React strict mode for better development experience
   reactStrictMode: true,
   
-  // NO static export for Vercel - this was causing the main issue
-  // Remove: output: 'export' - this breaks Vercel's server-side features
+  // Webpack configuration for transformers
+  webpack: (config, { isServer }) => {
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      "sharp$": false,
+      "onnxruntime-node$": false,
+    };
+    
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        path: false,
+        crypto: false,
+        stream: false,
+        util: false,
+        buffer: false,
+      };
+    }
+    
+    if (isServer) {
+      config.externals = config.externals || [];
+      config.externals.push({
+        'onnxruntime-node': 'onnxruntime-node',
+        'sharp': 'sharp'
+      });
+    }
+    
+    return config;
+  },
   
-  // Headers CORS for API
+  // External packages (Next.js 15 syntax)
+  serverExternalPackages: ['@xenova/transformers', 'onnxruntime-node', 'sharp'],
+  
+  // CORS headers
   async headers() {
     return [
       {
@@ -18,31 +48,19 @@ const nextConfig: NextConfig = {
           { key: 'Access-Control-Allow-Headers', value: 'Content-Type, Authorization' },
         ],
       },
-    ]
+    ];
   },
   
   // Redirections
   async redirects() {
     return [
-      {
-        source: '/dashboard',
-        destination: '/admin',
-        permanent: true,
-      },
-      {
-        source: '/demo',
-        destination: '/admin',
-        permanent: false,
-      },
-      {
-        source: '/',
-        destination: '/admin',
-        permanent: false,
-      },
-    ]
+      { source: '/', destination: '/admin', permanent: false },
+      { source: '/dashboard', destination: '/admin', permanent: true },
+      { source: '/demo', destination: '/admin', permanent: false },
+    ];
   },
   
-  // Images configuration for Vercel
+  // Images
   images: {
     domains: ['vercel.app', 'localhost', 'firebase.app', 'web.app', 'api.qrserver.com'],
     formats: ['image/avif', 'image/webp'],
@@ -50,21 +68,9 @@ const nextConfig: NextConfig = {
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
   
-  // Remove deprecated swcMinify - it's enabled by default in Next.js 15
   poweredByHeader: false,
-  
-  // TypeScript configuration
-  typescript: {
-    ignoreBuildErrors: false,
-  },
-  
-  // ESLint configuration
-  eslint: {
-    ignoreDuringBuilds: false,
-  },
-  
-  // Updated external packages configuration (fixed deprecated option)
-  serverExternalPackages: ['firebase-admin'],
+  typescript: { ignoreBuildErrors: false },
+  eslint: { ignoreDuringBuilds: false },
 };
 
 export default nextConfig;

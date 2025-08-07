@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, FormEvent, ChangeEvent, use } from 'react';
-import { Star, ThumbsUp, ThumbsDown, Meh } from 'lucide-react';
+import { Star, ThumbsUp, ThumbsDown, Meh, AlertCircle } from 'lucide-react';
 import { ref, push, onValue } from "firebase/database";
 import { db } from "../../firebase";
 import { eventConfigs, EventConfig } from '../../lib/eventConfigs';
@@ -12,6 +12,9 @@ interface EventPageProps {
     eventId: string;
   }>;
 }
+
+// AI Backend URL - REQUIRED for operation
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
 
 const UniversalFeedbackForm = ({ params }: EventPageProps) => {
   // Unwrap the params Promise using React.use()
@@ -30,11 +33,38 @@ const UniversalFeedbackForm = ({ params }: EventPageProps) => {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [submitSuccess, setSubmitSuccess] = useState<boolean | null>(null);
   const [errorMessage, setErrorMessage] = useState<string>('');
+  const [backendAvailable, setBackendAvailable] = useState<boolean | null>(null);
   
   // Client-side mounting check to prevent hydration issues
   useEffect(() => {
     setMounted(true);
   }, []);
+  
+  // Check backend availability on mount
+  useEffect(() => {
+    const checkBackend = async () => {
+      try {
+        const response = await fetch(`${BACKEND_URL}/health`, {
+          method: 'GET',
+          signal: AbortSignal.timeout(5000)
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          setBackendAvailable(data.success === true);
+        } else {
+          setBackendAvailable(false);
+        }
+      } catch (error) {
+        console.error('Backend health check failed:', error);
+        setBackendAvailable(false);
+      }
+    };
+
+    if (mounted) {
+      checkBackend();
+    }
+  }, [mounted]);
   
   // Load event config from static or Firebase
   useEffect(() => {
@@ -75,30 +105,64 @@ const UniversalFeedbackForm = ({ params }: EventPageProps) => {
     setIsSubmitting(true);
     setSubmitSuccess(null);
     setErrorMessage('');
+
+    // Check if backend is available
+    if (backendAvailable === false) {
+      setErrorMessage('AI Backend is not available. Please start the backend server first.');
+      setIsSubmitting(false);
+      return;
+    }
   
     try {
-      // Analyze sentiment using API
-      const response = await fetch('/api/analyze', {
+      console.log('🤖 Using AI-powered sentiment analysis backend:', BACKEND_URL);
+      
+      const response = await fetch(`${BACKEND_URL}/api/sentiment`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ text: feedback }),
+        body: JSON.stringify({ 
+          text: feedback,
+          language: 'auto', // Auto-detect language
+          saveToDatabase: false, // We'll save to Firebase separately
+          eventId: resolvedParams.eventId,
+          activity: activity,
+          rating: rating,
+          includeEntities: true,
+          includeKeyPhrases: true
+        }),
       });
   
       if (response.ok) {
         const data = await response.json();
         const dominantSentiment = data.dominant_sentiment;
+        
+        console.log('✅ AI sentiment analysis result:', {
+          sentiment: dominantSentiment,
+          confidence: data.confidence,
+          language: data.language_detected,
+          model: data.model,
+          cost: data.metadata?.cost || '$0.00'
+        });
+        
         setSentiment(dominantSentiment);
   
-        // Store feedback under the specific event
+        // Store feedback under the specific event with enhanced AI data
         const feedbackData = {
           activity,
           rating,
           feedback,
           sentiment: dominantSentiment,
           timestamp: new Date().toISOString(),
-          eventId: resolvedParams.eventId
+          eventId: resolvedParams.eventId,
+          // 🆕 Enhanced data from AI backend
+          confidence: data.confidence,
+          language_detected: data.language_detected,
+          ai_powered: true,
+          model: data.model,
+          provider: data.metadata?.provider || 'unknown',
+          entities: data.entities || [],
+          key_phrases: data.key_phrases || []
         };
   
         const feedbackRef = ref(db, `events/${resolvedParams.eventId}/feedback`);
@@ -111,12 +175,14 @@ const UniversalFeedbackForm = ({ params }: EventPageProps) => {
         setSentiment('');
         setSubmitSuccess(true);
       } else {
-        setErrorMessage("Failed to analyze sentiment. Please try again.");
+        const errorData = await response.json();
+        console.error('❌ AI Backend error:', errorData);
+        setErrorMessage(`AI Analysis failed: ${errorData.error || 'Unknown error'}`);
         setSubmitSuccess(false);
       }
     } catch (error) {
-      console.error("Error submitting data:", error);
-      setErrorMessage("Failed to submit feedback. Please check your connection and try again.");
+      console.error("❌ Error connecting to AI backend:", error);
+      setErrorMessage('Cannot connect to AI Backend. Please ensure the backend server is running on port 3001.');
       setSubmitSuccess(false);
     } finally {
       setIsSubmitting(false);
@@ -150,6 +216,48 @@ const UniversalFeedbackForm = ({ params }: EventPageProps) => {
       </div>
     );
   }
+
+  // Show backend unavailable error
+  if (backendAvailable === false) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-blue-900 p-4 flex items-center justify-center">
+        <div className="w-full max-w-lg bg-black/20 backdrop-blur-lg border border-red-500/50 rounded-2xl p-8">
+          <div className="text-center space-y-4">
+            <AlertCircle className="w-16 h-16 mx-auto text-red-400" />
+            <h1 className="text-2xl font-bold text-red-400">AI Backend Required</h1>
+            <div className="space-y-3 text-gray-300">
+              <p>The AI-powered sentiment analysis backend is not available.</p>
+              <p className="text-sm">This platform requires the AI backend to analyze feedback.</p>
+            </div>
+            
+            <div className="bg-gray-900/50 rounded-lg p-4 text-left text-sm space-y-2">
+              <div className="text-yellow-400 font-semibold">To start the backend:</div>
+              <div className="bg-black/30 rounded p-2 font-mono text-xs">
+                cd backend<br/>
+                npm run dev
+              </div>
+              <div className="text-gray-400">Or use the master startup script: <code className="bg-black/30 px-1 rounded">start.bat</code></div>
+            </div>
+
+            <div className="flex gap-4">
+              <button
+                onClick={() => window.location.reload()}
+                className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
+              >
+                Retry Connection
+              </button>
+              <Link
+                href="/admin"
+                className="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors text-center"
+              >
+                Admin Panel
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
   
   // Fallback if event not found
   if (!eventConfig) {
@@ -176,12 +284,22 @@ const UniversalFeedbackForm = ({ params }: EventPageProps) => {
             {eventConfig.title}
           </h1>
           <p className="text-gray-300 mt-2">{eventConfig.subtitle}</p>
+          {/* 🆕 Show AI backend status */}
+          <div className="flex items-center justify-center gap-2 mt-2">
+            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+            <p className="text-xs text-green-400 opacity-75">
+              AI-Powered Multilingual Analysis
+            </p>
+          </div>
         </div>
 
         {submitSuccess === true ? (
           <div className="text-center space-y-4">
             <ThumbsUp className="w-16 h-16 mx-auto text-green-400" />
             <h3 className="text-xl text-white font-semibold">Thank you for your feedback!</h3>
+            <p className="text-sm text-gray-400">
+              Your response has been analyzed with advanced AI and saved
+            </p>
             <button
               onClick={() => setSubmitSuccess(null)}
               className={`bg-gradient-to-r ${theme.buttonGradient} hover:${theme.buttonHover} text-white font-semibold py-2 px-6 rounded-lg transition-colors`}
@@ -252,15 +370,36 @@ const UniversalFeedbackForm = ({ params }: EventPageProps) => {
 
             <button
               type="submit"
-              disabled={isSubmitting}
-              className={`w-full bg-gradient-to-r ${theme.buttonGradient} hover:${theme.buttonHover} text-white font-semibold py-3 rounded-lg transition-colors ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
+              disabled={isSubmitting || backendAvailable === false}
+              className={`w-full bg-gradient-to-r ${theme.buttonGradient} hover:${theme.buttonHover} text-white font-semibold py-3 rounded-lg transition-colors ${isSubmitting || backendAvailable === false ? 'opacity-70 cursor-not-allowed' : ''}`}
             >
-              {isSubmitting ? 'Submitting...' : 'Submit Feedback'}
+              {isSubmitting ? (
+                <span className="flex items-center justify-center gap-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  Analyzing with AI...
+                </span>
+              ) : (
+                'Submit Feedback'
+              )}
             </button>
 
             {errorMessage && (
-              <div className="text-red-400 text-center mt-2">
-                {errorMessage}
+              <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 mt-4">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+                  <div className="space-y-2">
+                    <div className="text-red-400 text-sm font-medium">{errorMessage}</div>
+                    {errorMessage.includes("Backend") && (
+                      <div className="text-xs text-gray-400 space-y-1">
+                        <div>Start the AI backend:</div>
+                        <div className="bg-black/20 rounded p-2 font-mono text-xs">
+                          cd backend && npm run dev
+                        </div>
+                        <div>Or run: <code className="bg-black/20 px-1 rounded">start.bat</code></div>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             )}
           </form>

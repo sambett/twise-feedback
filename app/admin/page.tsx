@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Eye, QrCode, BarChart, Users, Star, Plus, Edit, Trash2, Copy, X, Check, Download, ExternalLink } from 'lucide-react';
 import { getAllEvents, EventConfig } from '../lib/eventConfigs';
-import { db } from '../firebase';
+import { db, isFirebaseAvailable } from '../firebase';
 import { ref, push, set, remove, onValue } from 'firebase/database';
 import Link from 'next/link';
 import Image from 'next/image';
