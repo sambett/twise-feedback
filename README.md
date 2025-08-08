@@ -28,7 +28,7 @@ A powerful, AI-enhanced feedback collection platform with real-time analytics an
   DB_HOST=localhost
   DB_PORT=3306
   DB_USER=root
-  DB_PASSWORD=simsim
+  DB_PASSWORD=''
   DB_NAME=twise_feedback
   ```
 
