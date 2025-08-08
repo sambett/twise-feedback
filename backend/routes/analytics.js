@@ -1,197 +1,29 @@
 // Analytics and statistics routes
-import { dbService } from '../config/firebase-admin.js';
+import { dbService } from '../config/database.js';
 
 // Get detailed analytics for a specific event
 export const getEventAnalytics = async (req, res) => {
   try {
     const { eventId } = req.params;
     
-    // Get event data
-    const events = await dbService.get('events');
-    let event = null;
-    let firebaseId = null;
+    // Use the MySQL database service's analytics method
+    const analyticsData = await dbService.getEventAnalytics(eventId);
 
-    // Find event by firebaseId or event.id
-    if (events[eventId]) {
-      event = events[eventId];
-      firebaseId = eventId;
-    } else {
-      const eventEntry = Object.entries(events).find(([, data]) => data.id === eventId);
-      if (eventEntry) {
-        [firebaseId, event] = eventEntry;
-      }
-    }
+    res.json({
+      success: true,
+      data: analyticsData
+    });
 
-    if (!event) {
+  } catch (error) {
+    console.error('Error getting event analytics:', error);
+    
+    if (error.message === 'Event not found') {
       return res.status(404).json({
         success: false,
         error: 'Event not found'
       });
     }
 
-    // Get all feedback for this event
-    const feedbackPath = `events/${firebaseId}/feedback`;
-    const feedbackData = await dbService.get(feedbackPath);
-    const feedbackArray = Object.entries(feedbackData).map(([id, data]) => ({
-      ...data,
-      feedbackId: id
-    }));
-
-    const totalFeedback = feedbackArray.length;
-
-    if (totalFeedback === 0) {
-      return res.json({
-        success: true,
-        data: {
-          event: { ...event, firebaseId },
-          analytics: {
-            totalFeedback: 0,
-            averageRating: 0,
-            sentimentBreakdown: {
-              positive: 0,
-              neutral: 0,
-              negative: 0
-            },
-            activityBreakdown: {},
-            ratingDistribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
-            languageDistribution: {},
-            timeAnalysis: {
-              last24Hours: 0,
-              last7Days: 0,
-              last30Days: 0
-            },
-            trends: {
-              hourly: Array(24).fill(0),
-              daily: Array(7).fill(0),
-              recentSentiment: []
-            }
-          }
-        }
-      });
-    }
-
-    // Calculate statistics
-    const totalRating = feedbackArray.reduce((sum, f) => sum + (f.starRating || 0), 0);
-    const averageRating = totalFeedback > 0 ? (totalRating / totalFeedback) : 0;
-
-    // Sentiment breakdown
-    const sentimentBreakdown = {
-      positive: feedbackArray.filter(f => f.sentiment === 'positive').length,
-      neutral: feedbackArray.filter(f => f.sentiment === 'neutral').length,
-      negative: feedbackArray.filter(f => f.sentiment === 'negative').length
-    };
-
-    // Activity breakdown
-    const activityBreakdown = {};
-    feedbackArray.forEach(f => {
-      const activity = f.activity || 'Other';
-      if (!activityBreakdown[activity]) {
-        activityBreakdown[activity] = {
-          count: 0,
-          averageRating: 0,
-          totalRating: 0,
-          sentiments: { positive: 0, neutral: 0, negative: 0 }
-        };
-      }
-      activityBreakdown[activity].count++;
-      activityBreakdown[activity].totalRating += (f.starRating || 0);
-      if (f.sentiment) {
-        activityBreakdown[activity].sentiments[f.sentiment]++;
-      }
-    });
-
-    // Calculate average ratings per activity
-    Object.keys(activityBreakdown).forEach(activity => {
-      const act = activityBreakdown[activity];
-      act.averageRating = act.count > 0 ? (act.totalRating / act.count) : 0;
-      delete act.totalRating;
-    });
-
-    // Rating distribution
-    const ratingDistribution = {
-      1: feedbackArray.filter(f => f.starRating === 1).length,
-      2: feedbackArray.filter(f => f.starRating === 2).length,
-      3: feedbackArray.filter(f => f.starRating === 3).length,
-      4: feedbackArray.filter(f => f.starRating === 4).length,
-      5: feedbackArray.filter(f => f.starRating === 5).length
-    };
-
-    // Language distribution
-    const languageDistribution = {};
-    feedbackArray.forEach(f => {
-      const lang = f.language || 'unknown';
-      languageDistribution[lang] = (languageDistribution[lang] || 0) + 1;
-    });
-
-    // Time-based analysis
-    const now = new Date();
-    const last24h = feedbackArray.filter(f => 
-      f.timestamp && (now - new Date(f.timestamp)) < 24 * 60 * 60 * 1000
-    ).length;
-    const last7d = feedbackArray.filter(f => 
-      f.timestamp && (now - new Date(f.timestamp)) < 7 * 24 * 60 * 60 * 1000
-    ).length;
-    const last30d = feedbackArray.filter(f => 
-      f.timestamp && (now - new Date(f.timestamp)) < 30 * 24 * 60 * 60 * 1000
-    ).length;
-
-    // Hourly trends (last 24 hours)
-    const hourlyTrends = Array(24).fill(0);
-    const dailyTrends = Array(7).fill(0);
-
-    feedbackArray.forEach(f => {
-      if (f.timestamp) {
-        const date = new Date(f.timestamp);
-        const hourDiff = Math.floor((now - date) / (60 * 60 * 1000));
-        const dayDiff = Math.floor((now - date) / (24 * 60 * 60 * 1000));
-        
-        if (hourDiff < 24) {
-          hourlyTrends[23 - hourDiff]++;
-        }
-        if (dayDiff < 7) {
-          dailyTrends[6 - dayDiff]++;
-        }
-      }
-    });
-
-    // Recent sentiment trend (last 10 feedback entries)
-    const recentSentiment = feedbackArray
-      .sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0))
-      .slice(0, 10)
-      .map(f => ({
-        sentiment: f.sentiment,
-        rating: f.starRating,
-        timestamp: f.timestamp
-      }));
-
-    res.json({
-      success: true,
-      data: {
-        event: { ...event, firebaseId },
-        analytics: {
-          totalFeedback,
-          averageRating: Math.round(averageRating * 10) / 10,
-          sentimentBreakdown,
-          activityBreakdown,
-          ratingDistribution,
-          languageDistribution,
-          timeAnalysis: {
-            last24Hours: last24h,
-            last7Days: last7d,
-            last30Days: last30d
-          },
-          trends: {
-            hourly: hourlyTrends,
-            daily: dailyTrends,
-            recentSentiment
-          },
-          lastUpdated: new Date().toISOString()
-        }
-      }
-    });
-
-  } catch (error) {
-    console.error('Error getting event analytics:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to get event analytics',
@@ -201,6 +33,8 @@ export const getEventAnalytics = async (req, res) => {
 };
 
 // Get real-time updates via Server-Sent Events
+// Note: Real-time functionality is limited with MySQL compared to Firebase
+// This provides periodic updates instead of true real-time
 export const getRealtimeAnalytics = (req, res) => {
   try {
     const { eventId } = req.params;
@@ -217,65 +51,56 @@ export const getRealtimeAnalytics = (req, res) => {
     // Send initial connection message
     res.write(`data: ${JSON.stringify({ type: 'connected', eventId })}\n\n`);
 
-    let unsubscribe;
+    let lastUpdateTime = Date.now();
 
-    try {
-      // Set up Firebase listener
-      unsubscribe = dbService.listen(`events/${eventId}/feedback`, (feedbackData) => {
-        const feedbackArray = Object.entries(feedbackData || {}).map(([id, data]) => ({
-          ...data,
-          feedbackId: id
-        }));
-
-        // Calculate quick stats for real-time updates
-        const totalFeedback = feedbackArray.length;
-        const averageRating = totalFeedback > 0 
-          ? feedbackArray.reduce((sum, f) => sum + (f.starRating || 0), 0) / totalFeedback
-          : 0;
-
-        const sentimentCounts = {
-          positive: feedbackArray.filter(f => f.sentiment === 'positive').length,
-          neutral: feedbackArray.filter(f => f.sentiment === 'neutral').length,
-          negative: feedbackArray.filter(f => f.sentiment === 'negative').length
-        };
-
+    // Function to send analytics updates
+    const sendUpdate = async () => {
+      try {
+        const analyticsData = await dbService.getEventAnalytics(eventId);
+        
         const update = {
           type: 'update',
           timestamp: new Date().toISOString(),
           data: {
-            totalFeedback,
-            averageRating: Math.round(averageRating * 10) / 10,
-            sentimentCounts,
-            latestFeedback: feedbackArray
-              .sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0))
-              .slice(0, 5) // Latest 5 feedback entries
+            totalFeedback: analyticsData.analytics.totalFeedback,
+            averageRating: analyticsData.analytics.averageRating,
+            sentimentCounts: analyticsData.analytics.sentimentBreakdown,
+            latestFeedback: analyticsData.analytics.trends.recentSentiment.slice(0, 5)
           }
         };
 
         res.write(`data: ${JSON.stringify(update)}\n\n`);
-      });
+        lastUpdateTime = Date.now();
 
-      // Handle client disconnect
-      req.on('close', () => {
-        if (unsubscribe) {
-          unsubscribe();
-        }
-        console.log('SSE client disconnected');
-      });
+      } catch (error) {
+        console.error('Error in real-time update:', error);
+        res.write(`data: ${JSON.stringify({ type: 'error', message: error.message })}\n\n`);
+      }
+    };
 
-      // Keep connection alive
-      const keepAlive = setInterval(() => {
-        res.write(`data: ${JSON.stringify({ type: 'ping', timestamp: new Date().toISOString() })}\n\n`);
-      }, 30000);
+    // Send initial update
+    sendUpdate();
 
-      req.on('close', () => {
-        clearInterval(keepAlive);
-      });
+    // Set up periodic updates (every 10 seconds)
+    const updateInterval = setInterval(sendUpdate, 10000);
 
-    } catch (error) {
-      console.error('Error setting up real-time listener:', error);
-      res.write(`data: ${JSON.stringify({ type: 'error', message: error.message })}\n\n`);
-    }
+    // Keep connection alive with ping every 30 seconds
+    const keepAlive = setInterval(() => {
+      res.write(`data: ${JSON.stringify({ type: 'ping', timestamp: new Date().toISOString() })}\n\n`);
+    }, 30000);
+
+    // Handle client disconnect
+    req.on('close', () => {
+      clearInterval(updateInterval);
+      clearInterval(keepAlive);
+      console.log('SSE client disconnected');
+    });
+
+    req.on('error', (error) => {
+      console.error('SSE error:', error);
+      clearInterval(updateInterval);
+      clearInterval(keepAlive);
+    });
 
   } catch (error) {
     console.error('Error setting up real-time analytics:', error);
@@ -291,44 +116,49 @@ export const getRealtimeAnalytics = (req, res) => {
 export const getPlatformStats = async (req, res) => {
   try {
     // Get all events
-    const events = await dbService.get('events');
-    const eventsArray = Object.entries(events).map(([id, data]) => ({ ...data, firebaseId: id }));
+    const events = await dbService.getEvents();
+    
+    // Get all feedback
+    const allFeedback = await dbService.getFeedback({});
 
-    let totalFeedback = 0;
     let totalRating = 0;
-    let sentimentCounts = { positive: 0, neutral: 0, negative: 0 };
+    const sentimentCounts = { positive: 0, neutral: 0, negative: 0 };
 
-    // Aggregate data from all events
-    for (const [firebaseId] of Object.entries(events)) {
-      try {
-        const feedbackData = await dbService.get(`events/${firebaseId}/feedback`);
-        const feedbackArray = Object.values(feedbackData || {});
-        
-        totalFeedback += feedbackArray.length;
-        totalRating += feedbackArray.reduce((sum, f) => sum + (f.starRating || 0), 0);
-        
-        feedbackArray.forEach(f => {
-          if (f.sentiment) {
-            sentimentCounts[f.sentiment]++;
-          }
-        });
-      } catch (err) {
-        console.warn(`Could not get feedback for event ${firebaseId}:`, err.message);
+    // Aggregate feedback data
+    allFeedback.forEach(f => {
+      totalRating += f.starRating || 0;
+      if (f.sentiment) {
+        sentimentCounts[f.sentiment]++;
       }
-    }
+    });
 
-    const averageRating = totalFeedback > 0 ? (totalRating / totalFeedback) : 0;
+    const averageRating = allFeedback.length > 0 ? (totalRating / allFeedback.length) : 0;
+
+    // Calculate active events (created in last 30 days)
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
+    const activeEvents = events.filter(e => 
+      e.createdAt && new Date(e.createdAt) > thirtyDaysAgo
+    ).length;
 
     res.json({
       success: true,
       data: {
-        totalEvents: eventsArray.length,
-        totalFeedback,
+        totalEvents: events.length,
+        totalFeedback: allFeedback.length,
         averageRating: Math.round(averageRating * 10) / 10,
         sentimentBreakdown: sentimentCounts,
-        activeEvents: eventsArray.filter(e => e.createdAt && 
-          (new Date() - new Date(e.createdAt)) < 30 * 24 * 60 * 60 * 1000
-        ).length,
+        activeEvents,
+        recentEvents: events
+          .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
+          .slice(0, 5)
+          .map(e => ({
+            id: e.id,
+            title: e.title,
+            createdAt: e.createdAt
+          })),
+        databaseStatus: dbService.getHealthStatus(),
         lastUpdated: new Date().toISOString()
       }
     });

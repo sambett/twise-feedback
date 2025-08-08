@@ -1,4 +1,4 @@
-// Universal Feedback Platform Backend with Firebase Integration
+// Universal Feedback Platform Backend with MySQL Integration
 // 100% Open Source - No API Keys Required
 
 import express from 'express';
@@ -8,8 +8,8 @@ import compression from 'compression';
 import dotenv from 'dotenv';
 import { RateLimiterMemory } from 'rate-limiter-flexible';
 
-// Import Firebase configuration
-import { dbService } from './config/firebase-admin.js';
+// Import MySQL database configuration
+import { dbService } from './config/database.js';
 
 // Import all routes
 import { 
@@ -132,7 +132,7 @@ app.use('/api', rateLimitMiddleware);
 
 // Health check endpoint
 app.get('/health', async (req, res) => {
-  const firebaseStatus = dbService.getHealthStatus();
+  const databaseStatus = dbService.getHealthStatus();
   
   res.json({
     success: true,
@@ -147,7 +147,7 @@ app.get('/health', async (req, res) => {
       localAI: true,
       requiresAPIKey: false,
       multilingual: true,
-      firebase: firebaseStatus
+      database: databaseStatus
     }
   });
 });
@@ -158,14 +158,15 @@ app.get('/api', (req, res) => {
     success: true,
     name: 'Universal Feedback Platform API',
     version: '2.0.0',
-    description: 'Feedback collection with Firebase and local AI sentiment analysis',
+    description: 'Feedback collection with MySQL and local AI sentiment analysis',
     features: [
       '✅ 100% Open Source',
       '✅ No API Keys Required', 
-      '✅ Firebase Integration',
+      '✅ MySQL Local Database',
       '✅ Real-time Analytics',
       '✅ Local AI Sentiment Analysis',
-      '✅ Multilingual Support'
+      '✅ Multilingual Support',
+      '✅ Persistent Data Storage'
     ],
     endpoints: {
       events: {
@@ -225,7 +226,7 @@ app.get('/api/metrics', async (req, res) => {
   try {
     const { getMetrics } = await import('./services/sentiment.js');
     const sentimentMetrics = getMetrics();
-    const firebaseStatus = dbService.getHealthStatus();
+    const databaseStatus = dbService.getHealthStatus();
     
     res.json({
       success: true,
@@ -235,7 +236,7 @@ app.get('/api/metrics', async (req, res) => {
         version: '2.0.0',
         timestamp: new Date().toISOString()
       },
-      firebase: firebaseStatus,
+      database: databaseStatus,
       sentiment: sentimentMetrics
     });
   } catch (error) {
@@ -334,14 +335,15 @@ const startServer = async () => {
     console.log('🚀 Starting Universal Feedback Platform...');
     console.log('📦 Loading modules...');
     
-    // Check Firebase connection
-    const firebaseStatus = dbService.getHealthStatus();
-    if (firebaseStatus.available) {
-      console.log('✅ Firebase connection established');
-      console.log(`📊 Project: ${firebaseStatus.projectId}`);
-      console.log(`🔗 Database: ${firebaseStatus.databaseUrl}`);
+    // Check MySQL connection
+    const databaseStatus = dbService.getHealthStatus();
+    if (databaseStatus.available) {
+      console.log('✅ MySQL connection established');
+      console.log(`📊 Database: ${databaseStatus.database}`);
+      console.log(`🔗 Host: ${databaseStatus.host}:${databaseStatus.port}`);
     } else {
-      console.warn('⚠️ Firebase connection failed - some features may be limited');
+      console.warn('⚠️ MySQL connection failed - some features may be limited');
+      console.log('💡 Run: npm run setup-db to set up the database');
     }
     
     // Initialize sentiment analyzer
@@ -365,7 +367,7 @@ const startServer = async () => {
       console.log('   📋 Event Management: Full CRUD operations');
       console.log('   📝 Feedback System: With sentiment analysis');
       console.log('   📊 Real-time Analytics: Live updates via SSE');
-      console.log('   🔥 Firebase Integration: Persistent data storage');
+      console.log('   🗄️ MySQL Database: Persistent local data storage');
       console.log('   🤖 Local AI: Sentiment analysis (no API keys!)');
       console.log('');
       console.log('🧪 Test Commands:');

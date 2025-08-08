@@ -1,7 +1,7 @@
 {
   "name": "twise-feedback-backend",
   "version": "2.0.0",
-  "description": "Universal Feedback Platform Backend with Local AI Sentiment Analysis",
+  "description": "Universal Feedback Platform Backend with Local MySQL Database",
   "main": "server.js",
   "type": "module",
   "scripts": {
@@ -10,6 +10,10 @@
     "build": "echo 'No build step needed for Node.js'",
     "test": "node test-sentiment.js",
     "setup": "npm install",
+    "setup-db": "node setup-database.js",
+    "test-db": "node test-database.js",
+    "demo-data": "node generate-demo-data.js",
+    "verify-setup": "npm run test-db && echo Database verified successfully!",
     "docker:build": "docker build -t twise-backend .",
     "docker:run": "docker run -p 3001:3001 --env-file .env.local twise-backend",
     "docker:dev": "docker-compose --profile development up",
@@ -25,8 +29,8 @@
     "cors": "^2.8.5",
     "dotenv": "^16.6.1",
     "express": "^4.21.2",
-    "firebase-admin": "^12.7.0",
     "helmet": "^8.1.0",
+    "mysql2": "^3.6.5",
     "rate-limiter-flexible": "^5.0.5"
   },
   "devDependencies": {
@@ -37,7 +41,8 @@
     "sentiment-analysis",
     "ai",
     "local-ai",
-    "open-source",
+    "mysql",
+    "local-database",
     "transformers",
     "express",
     "universal-feedback-platform"

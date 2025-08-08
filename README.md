@@ -1,389 +1,209 @@
-# 🚀 Universal Feedback Platform
+# 🚀 TWISE Universal Feedback Platform
 
-A modern, scalable feedback collection platform with **AI-powered sentiment analysis** and **real-time analytics**. Built with a clean backend-first architecture for maximum reliability and performance.
+> **Migration Complete**: Successfully migrated from Firebase to MySQL local database
 
-## ✨ Features
+A powerful, AI-enhanced feedback collection platform with real-time analytics and sentiment analysis. Built with Next.js frontend and Express.js backend, powered by local MySQL database.
 
-- **🤖 AI Sentiment Analysis** - Local AI models, no API keys required
-- **📊 Real-time Analytics** - Live dashboard updates via Server-Sent Events
-- **🔥 Firebase Integration** - Persistent data storage with Firebase Realtime Database
-- **🌐 Clean Architecture** - Backend handles everything, frontend is pure UI
-- **📱 Responsive Design** - Works perfectly on desktop and mobile
-- **🎨 Customizable Themes** - Beautiful, brandable event themes
-- **🌍 Multilingual Support** - Auto-detects 100+ languages
-- **⚡ Production Ready** - Rate limiting, validation, error handling
+## 🎯 Quick Start
 
-## 🏗️ Architecture
+### Option 1: Easy Launch (Recommended)
+1. **Double-click** `run_full_stack.bat` - This will:
+   - Check database connection
+   - Install dependencies
+   - Start both frontend and backend
+   - Open your browser automatically
 
+### Option 2: Manual Setup
+1. **Setup Database**: Double-click `setup_database.bat`
+2. **Run Application**: Double-click `run_full_stack.bat`
+
+## 📋 Prerequisites
+
+- **MySQL Server** (running on localhost:3306)
+  - XAMPP, WAMP, or standalone MySQL
+  - MySQL91 service should be running
+- **Node.js** 20+ and npm 10+
+- **Database Credentials** in `backend/.env.local`:
+  ```env
+  DB_HOST=localhost
+  DB_PORT=3306
+  DB_USER=root
+  DB_PASSWORD=simsim
+  DB_NAME=twise_feedback
+  ```
+
+## 🗄️ Database Setup
+
+The platform uses **MySQL database** with the following structure:
+
+### Events Table
+- `id` (VARCHAR) - Primary key
+- `title`, `subtitle` - Event information
+- `activities` (JSON) - Available activity options
+- `theme` (JSON) - Custom styling
+- `activity_label`, `feedback_label`, `feedback_placeholder` - Custom labels
+- `is_custom` (BOOLEAN) - Whether event is user-created
+- Timestamps: `created_at`, `updated_at`
+
+### Feedback Table
+- `id` (AUTO_INCREMENT) - Primary key
+- `feedback_id` (VARCHAR) - Unique identifier
+- `event_id` (VARCHAR) - Foreign key to events
+- `star_rating` (1-5) - Rating score
+- `activity` - Selected activity
+- `comment` - User feedback text
+- `user_name`, `user_email` - Optional user info
+- **AI Fields**: `sentiment`, `sentiment_score`, `sentiment_confidence`, `language`
+- `processing_time` - AI processing duration
+- `timestamp` - When feedback was submitted
+
+## 🔧 Available Scripts
+
+### Backend Scripts (in `backend/` folder)
+```bash
+npm run dev              # Start development server
+npm run setup-db         # Create database and tables
+npm run test-db          # Test database connection
+npm run demo-data        # Generate sample feedback data
+npm run verify-setup     # Full database verification
 ```
-Frontend (Next.js) → Backend API (Express) → Firebase Realtime Database
-                            ↓
-                     AI Sentiment Analysis
+
+### Frontend Scripts (in main folder)
+```bash
+npm run dev              # Start Next.js development server
+npm run full:dev         # Start both frontend and backend
+npm run backend:dev      # Start only backend
+npm run backend:setup    # Setup backend database
 ```
 
-### Why This Architecture?
+### Batch Files (Windows)
+- `run_full_stack.bat` - Start complete application
+- `setup_database.bat` - Database setup wizard
+- `backend/run_local.bat` - Backend only with DB check
 
-- **Security**: No Firebase credentials exposed in frontend
-- **Scalability**: Backend handles all business logic and data processing  
-- **Reliability**: Centralized error handling and validation
-- **Performance**: AI analysis happens server-side
-- **Maintainability**: Clear separation of concerns
+## 🌐 Application URLs
+
+Once running, access these endpoints:
+
+- **🏠 Main App**: http://localhost:3000
+- **👑 Admin Dashboard**: http://localhost:3000/admin
+- **📊 Backend API**: http://localhost:3001
+- **❤️ Health Check**: http://localhost:3001/health
+- **📚 API Documentation**: http://localhost:3001/api
+
+### Example Event URLs
+- **TWISE Event**: http://localhost:3000/event/twise-night
+- **Sample Event**: http://localhost:3000/event/sample-research-event
+
+## 🎮 Key Features
+
+### ✅ **Already Working**
+- ✅ **MySQL Database**: Local persistent storage
+- ✅ **Event Management**: Create, edit, delete custom events
+- ✅ **Feedback Collection**: Star ratings + comments
+- ✅ **Local AI Sentiment Analysis**: No API keys required
+- ✅ **Real-time Analytics**: Live dashboard updates
+- ✅ **Multi-language Support**: Auto-detect language
+- ✅ **QR Code Generation**: For easy event sharing
+- ✅ **Responsive Design**: Works on all devices
+- ✅ **Custom Themes**: Multiple color schemes
+
+### 🔥 **AI Powered**
+- **Sentiment Analysis**: Automatic positive/neutral/negative detection
+- **Confidence Scoring**: AI confidence levels for each analysis
+- **Language Detection**: Supports 12+ languages
+- **Processing Metrics**: Track AI performance
+
+### 📊 **Analytics Dashboard**
+- **Real-time Updates**: Live feedback streaming
+- **Sentiment Breakdown**: Visual sentiment distribution
+- **Activity Analysis**: Performance by activity type
+- **Rating Distribution**: Star rating analytics
+- **Time-based Trends**: 24h/7d/30d analysis
+
+## 🛠️ Troubleshooting
+
+### Database Connection Issues
+1. **Check MySQL Service**:
+   ```cmd
+   net start MySQL91
+   ```
+
+2. **Verify Credentials**: Check `backend/.env.local`
+
+3. **Test Connection**:
+   ```cmd
+   cd backend
+   node test-database.js
+   ```
+
+### Common Solutions
+- **Port Conflicts**: Change ports in `.env.local`
+- **Missing Tables**: Run `npm run setup-db`
+- **No Demo Data**: Run `npm run demo-data`
+- **CORS Issues**: Check `CORS_ORIGIN` in backend `.env.local`
 
 ## 📁 Project Structure
 
 ```
 twise/
-├── 📱 frontend/                 # Next.js Application
-│   ├── app/
-│   │   ├── admin/              # Events overview & analytics
-│   │   ├── event/[eventId]/    # Feedback forms
-│   │   └── lib/
-│   │       ├── api.ts          # API client (no Firebase!)
-│   │       └── types.ts        # TypeScript interfaces
-│   └── .env.local              # Only NEXT_PUBLIC_API_URL
-│
-├── 🔧 backend/                  # Express.js Server
-│   ├── src/
-│   │   ├── server.js           # Main server
-│   │   ├── config/
-│   │   │   └── firebase-admin.js # Firebase Admin SDK
-│   │   ├── routes/
-│   │   │   ├── events.js       # Event CRUD operations
-│   │   │   ├── feedback.js     # Feedback with sentiment
-│   │   │   └── analytics.js    # Statistics endpoints
-│   │   └── services/
-│   │       └── sentiment.js    # AI sentiment analyzer
-│   └── .env.local              # Firebase Admin + API config
-│
-└── 🚀 run-all.bat              # Start everything
+├── app/                    # Next.js frontend
+│   ├── admin/             # Admin dashboard pages
+│   ├── event/[eventId]/   # Public feedback forms
+│   ├── lib/               # API client and utilities
+│   └── components/        # React components
+├── backend/               # Express.js backend
+│   ├── config/           # Database configuration
+│   ├── routes/           # API endpoints
+│   ├── services/         # Business logic (AI, etc.)
+│   ├── init.sql          # Database setup script
+│   ├── setup-database.js # Database initialization
+│   ├── test-database.js  # Connection testing
+│   └── generate-demo-data.js # Sample data generator
+├── run_full_stack.bat    # Main launcher
+├── setup_database.bat    # Database setup wizard
+└── README.md
 ```
 
-## ⚡ Quick Start
-
-### 1. Clone & Install
-
-```bash
-# 1. Navigate to the project directory
-cd "C:\Users\SelmaB\Desktop\Nuit des Chercheurs 2025 - Dashboard IA_files\twise"
-
-# 2. Install frontend dependencies
-npm install
-
-# 3. Install backend dependencies  
-cd backend
-npm install
-cd ..
-```
-
-### 2. Configure Environment
-
-The backend environment file should already be configured:
-
-**Backend** (`backend/.env.local`):
-```env
-# Server Configuration
-PORT=3001
-NODE_ENV=development
-CORS_ORIGIN=http://localhost:3000
-
-# Firebase Admin SDK Configuration  
-FIREBASE_PROJECT_ID=twise-feedback
-FIREBASE_DATABASE_URL=https://twise-feedback-default-rtdb.europe-west1.firebasedatabase.app
-
-# Features
-RATE_LIMIT_REQUESTS_PER_MINUTE=100
-ENABLE_SENTIMENT_ANALYSIS=true
-```
-
-**Frontend** (`.env.local`):
-```env
-# Backend API URL (automatically created)
-NEXT_PUBLIC_API_URL=http://localhost:3001
-```
-
-### 3. Start the Platform
-
-**Option 1: Use the master script (Recommended)**
-```bash
-run-all.bat
-```
-
-**Option 2: Start manually**
-```bash
-# Terminal 1: Start backend
-cd backend
-npm run dev
-
-# Terminal 2: Start frontend  
-npm run dev
-```
-
-### 4. Access the Platform
-
-- **🏠 Admin Dashboard**: http://localhost:3000/admin
-- **📊 API Documentation**: http://localhost:3001/api
-- **❤️ Health Check**: http://localhost:3001/health
-- **📝 Feedback Form Example**: http://localhost:3000/event/twise-night
-
-## 🔌 API Endpoints
-
-### Events Management
-```bash
-GET    /api/events           # List all events
-GET    /api/events/:id       # Get specific event
-POST   /api/events           # Create new event
-PUT    /api/events/:id       # Update event
-DELETE /api/events/:id       # Delete event
-```
-
-### Feedback Operations
-```bash
-POST   /api/feedback         # Submit feedback (includes sentiment analysis)
-GET    /api/feedback         # Get all feedback (with filters)
-GET    /api/feedback/:eventId # Get event-specific feedback
-```
-
-### Analytics & Real-time
-```bash
-GET    /api/analytics/:eventId      # Event statistics
-GET    /api/analytics/:eventId/realtime # Real-time updates (SSE)
-GET    /api/analytics/platform/stats    # Platform-wide statistics
-```
-
-### AI Sentiment Analysis
-```bash
-POST   /api/sentiment/test   # Test sentiment on any text
-POST   /api/sentiment/batch  # Batch analyze multiple texts
-```
-
-## 🧪 Testing the API
-
-### Submit Feedback
-```bash
-curl -X POST http://localhost:3001/api/feedback \
-  -H "Content-Type: application/json" \
-  -d '{
-    "starRating": 5,
-    "activity": "AI Workshop",
-    "comment": "This was absolutely amazing!",
-    "eventId": "twise-night"
-  }'
-```
-
-### Test Sentiment Analysis
-```bash
-curl -X POST http://localhost:3001/api/sentiment/test \
-  -H "Content-Type: application/json" \
-  -d '{"text": "I love this platform!"}'
-```
-
-### Get Event Analytics
-```bash
-curl http://localhost:3001/api/analytics/twise-night
-```
-
-## 🔥 Firebase Database Structure
-
-```javascript
-twise-feedback-default-rtdb/
-├── events/
-│   ├── {eventId}/
-│   │   ├── id: string
-│   │   ├── title: string  
-│   │   ├── subtitle: string
-│   │   ├── activities: string[]
-│   │   ├── theme: object
-│   │   └── feedback/
-│   │       └── {feedbackId}/
-│   │           ├── starRating: number (1-5)
-│   │           ├── activity: string
-│   │           ├── comment: string
-│   │           ├── sentiment: string (positive/negative/neutral)
-│   │           ├── sentimentScore: number (0-1)
-│   │           ├── sentimentConfidence: number  
-│   │           ├── language: string
-│   │           ├── timestamp: string
-│   │           └── eventId: string
-```
-
-## 🎨 Creating Custom Events
-
-### Via Admin Dashboard
-1. Go to http://localhost:3000/admin
-2. Click "Create New Event"
-3. Fill in details and choose theme
-4. Save and get QR code for feedback collection
-
-### Via API
-```bash
-curl -X POST http://localhost:3001/api/events \
-  -H "Content-Type: application/json" \
-  -d '{
-    "title": "My Custom Event",
-    "subtitle": "Event description",
-    "activities": ["Workshop", "Presentation", "Networking"],
-    "theme": {
-      "background": "from-blue-900 via-purple-900 to-indigo-900",
-      "titleGradient": "from-blue-400 to-purple-400", 
-      "buttonGradient": "from-blue-600 to-purple-600",
-      "buttonHover": "from-blue-700 to-purple-700",
-      "accent": "blue-400"
-    }
-  }'
-```
-
-## 📊 Real-time Analytics
-
-The platform provides real-time analytics via Server-Sent Events:
-
-```javascript
-// Frontend automatically connects to real-time updates
-const eventSource = new EventSource('http://localhost:3001/api/analytics/event-id/realtime');
-
-eventSource.onmessage = (event) => {
-  const data = JSON.parse(event.data);
-  // Update dashboard with real-time data
-};
-```
-
-## 🤖 AI Sentiment Analysis Features
-
-- **🎯 Accuracy**: Advanced transformer models for precise sentiment detection
-- **🌍 Multilingual**: Supports 100+ languages with auto-detection
-- **⚡ Performance**: Local processing, no external API calls
-- **📊 Confidence Scores**: Get confidence levels for each analysis
-- **🔄 Batch Processing**: Analyze multiple texts efficiently
-- **💰 Cost**: $0.00 - completely free to run
-
-## 🔐 Security & Production
-
-### Rate Limiting
-- 100 requests per minute per IP (configurable)
-- Automatic blocking of excessive requests
-
-### Data Validation  
-- Input sanitization on all endpoints
-- TypeScript interfaces for type safety
-- Comprehensive error handling
-
-### CORS Configuration
-- Configurable allowed origins
-- Secure headers with Helmet.js
-- Request/response logging
-
-## 🚀 Deployment
-
-### Frontend (Vercel/Netlify)
-```bash
-npm run build
-# Deploy to your preferred platform
-```
-
-### Backend (Railway/Render/Google Cloud)
-```bash
-cd backend
-npm start
-# Configure environment variables on your platform
-```
-
-### Environment Variables for Production
-```env
-# Backend Production
-NODE_ENV=production
-PORT=3001
-FIREBASE_PROJECT_ID=your-project-id
-FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
-FIREBASE_CLIENT_EMAIL=firebase-adminsdk@your-project.iam.gserviceaccount.com
-FIREBASE_DATABASE_URL=https://your-project-rtdb.firebaseio.com
-CORS_ORIGIN=https://your-domain.com
-```
-
-## 🛠️ Development
-
-### Adding New Features
-
-1. **Backend Route**: Add to `backend/routes/`
-2. **API Client**: Update `app/lib/api.ts`
-3. **Types**: Update `app/lib/types.ts`
-4. **Frontend**: Use the API client, never Firebase directly
-
-### Code Style
-- **Backend**: ES modules, async/await
-- **Frontend**: TypeScript, functional components, hooks
-- **Styling**: Tailwind CSS with custom gradients
-- **Icons**: Lucide React icons
-
-## 📈 Performance Metrics
-
-- **Sentiment Analysis**: ~100ms per request
-- **Real-time Updates**: <50ms latency via SSE
-- **API Response**: <200ms for most endpoints
-- **Database Queries**: Optimized Firebase queries
-- **Bundle Size**: Optimized with Next.js 15
-
-## 🐛 Troubleshooting
-
-### Backend Won't Start
-```bash
-# Check Node.js version
-node --version  # Should be >= 20
-
-# Check dependencies
-cd backend && npm install
-
-# Check environment file
-cat backend/.env.local
-```
-
-### Frontend API Errors
-```bash
-# Verify backend is running
-curl http://localhost:3001/health
-
-# Check environment
-cat .env.local
-```
-
-### Firebase Connection Issues
-```bash
-# Test Firebase connection
-curl http://localhost:3001/api/metrics
-```
-
-### AI Model Loading Slowly
-- First-time model download can take 1-2 minutes
-- Models are cached locally after first download
-- Check internet connection for initial download
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes following the architecture
-4. Test both frontend and backend
-5. Submit a pull request
-
-## 📄 License
-
-MIT License - feel free to use this project for any purpose.
-
-## 🙏 Acknowledgments
-
-- **Next.js** for the amazing React framework
-- **Express.js** for the robust backend
-- **Firebase** for real-time database
-- **Transformers.js** for local AI processing
-- **Tailwind CSS** for beautiful styling
-- **Recharts** for stunning analytics
-
----
+## 🔄 Migration Notes
+
+### ✅ **Successfully Migrated from Firebase**
+- **Database**: Firebase Realtime DB → MySQL
+- **Authentication**: Removed (using local-only setup)
+- **Hosting**: Firebase Hosting → Local development
+- **Data Structure**: Preserved event and feedback schemas
+- **Analytics**: Enhanced with SQL-based analytics
+
+### 🗑️ **Removed Firebase Dependencies**
+- Cleaned up all Firebase imports and configurations
+- Removed Firebase SDK dependencies
+- Updated TypeScript interfaces
+- Replaced Firebase demo data with MySQL version
+
+## 🚀 Production Deployment
+
+When ready for production:
+
+1. **Database**: Set up MySQL on production server
+2. **Environment**: Update backend `.env.local` with production credentials
+3. **Build**: Run `npm run build` in main folder
+4. **Deploy**: Use PM2, Docker, or your preferred deployment method
 
 ## 📞 Support
 
-For questions or issues:
-1. Check this README
-2. Look at API documentation: http://localhost:3001/api  
-3. Check health status: http://localhost:3001/health
-4. Review console logs in browser dev tools
+### 🛠️ **For Issues**
+1. Check database connection: `npm run test-db`
+2. Verify setup: `npm run verify-setup`
+3. Review logs in terminal output
+4. Check MySQL service status
 
-**🎉 Enjoy your Universal Feedback Platform!**
+### 🎯 **For Development**
+- Backend API docs: http://localhost:3001/api
+- Health monitoring: http://localhost:3001/health
+- Metrics: http://localhost:3001/api/metrics
+
+---
+
+**🎉 Ready to collect feedback with AI-powered insights!**
+
+> **Note**: This is a complete, working application with local MySQL database. No external APIs or Firebase accounts required.

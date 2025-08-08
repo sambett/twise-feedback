@@ -19,11 +19,12 @@ export interface EventConfig {
   feedbackPlaceholder?: string;
   createdAt?: string;
   updatedAt?: string;
+  isCustom?: boolean;
 }
 
-export interface FirebaseEvent extends EventConfig {
-  firebaseId?: string;
-  isCustom?: boolean;
+// Clean interface without Firebase references
+export interface Event extends EventConfig {
+  // Removed firebaseId - using only MySQL 'id' field
 }
 
 export interface FeedbackInput {
@@ -96,7 +97,7 @@ export interface EventAnalytics {
 }
 
 export interface AnalyticsResponse {
-  event: FirebaseEvent;
+  event: Event;
   analytics: EventAnalytics;
 }
 
@@ -158,11 +159,11 @@ export interface SystemHealth {
     localAI: boolean;
     requiresAPIKey: boolean;
     multilingual: boolean;
-    firebase: {
+    database: {
       available: boolean;
-      projectId: string;
-      databaseUrl: string;
-      hasCredentials: boolean;
+      type: string;
+      host: string;
+      connectionStatus: string;
     };
   };
 }
@@ -258,3 +259,8 @@ export const THEME_PRESETS = [
 ] as const;
 
 export type ThemePreset = typeof THEME_PRESETS[number];
+
+// For backward compatibility during migration
+export interface FirebaseEvent extends Event {
+  firebaseId?: string;  // Will map to 'id' field in MySQL
+}

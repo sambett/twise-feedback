@@ -2,7 +2,7 @@
   "name": "universal-feedback-platform",
   "version": "2.0.0",
   "private": true,
-  "description": "Universal Feedback Platform with AI-powered sentiment analysis and real-time analytics",
+  "description": "Universal Feedback Platform with AI-powered sentiment analysis and local MySQL database",
   "keywords": [
     "feedback",
     "analytics",
@@ -10,7 +10,8 @@
     "real-time",
     "ai",
     "sentiment-analysis",
-    "firebase",
+    "mysql",
+    "local-database",
     "nextjs",
     "express"
   ],
@@ -30,8 +31,11 @@
     "reset": "npm run clean && npm install",
     "backend:dev": "cd backend && npm run dev",
     "backend:start": "cd backend && npm start",
+    "backend:setup": "cd backend && npm run setup-db",
+    "backend:test": "cd backend && npm run test-db",
     "full:dev": "concurrently --names \"FRONTEND,BACKEND\" --prefix-colors \"blue,green\" \"npm run dev\" \"npm run backend:dev\"",
     "full:install": "npm install && cd backend && npm install && cd ..",
+    "full:setup": "npm run full:install && npm run backend:setup",
     "test:api": "cd backend && npm test",
     "health": "curl -f http://localhost:3001/health || echo 'Backend not running'"
   },

@@ -1,19 +1,15 @@
 // Event management routes
-import { dbService } from '../config/firebase-admin.js';
+import { dbService } from '../config/database.js';
 
 // Get all events
 export const getAllEvents = async (req, res) => {
   try {
-    const events = await dbService.get('events');
-    const eventsArray = Object.entries(events).map(([id, data]) => ({
-      ...data,
-      firebaseId: id
-    }));
+    const events = await dbService.getEvents();
 
     res.json({
       success: true,
-      count: eventsArray.length,
-      data: eventsArray
+      count: events.length,
+      data: events
     });
   } catch (error) {
     console.error('Error fetching events:', error);
@@ -30,22 +26,7 @@ export const getEvent = async (req, res) => {
   try {
     const { id } = req.params;
     
-    // Try to find event by firebaseId first
-    const events = await dbService.get('events');
-    let event = null;
-    let firebaseId = null;
-
-    // Check if id is a firebase ID
-    if (events[id]) {
-      event = events[id];
-      firebaseId = id;
-    } else {
-      // Search by event.id field
-      const eventEntry = Object.entries(events).find(([, data]) => data.id === id);
-      if (eventEntry) {
-        [firebaseId, event] = eventEntry;
-      }
-    }
+    const event = await dbService.getEvent(id);
 
     if (!event) {
       return res.status(404).json({
@@ -56,10 +37,7 @@ export const getEvent = async (req, res) => {
 
     res.json({
       success: true,
-      data: {
-        ...event,
-        firebaseId
-      }
+      data: event
     });
   } catch (error) {
     console.error('Error fetching event:', error);
@@ -81,7 +59,8 @@ export const createEvent = async (req, res) => {
       theme,
       activityLabel,
       feedbackLabel,
-      feedbackPlaceholder
+      feedbackPlaceholder,
+      isCustom
     } = req.body;
 
     // Validate required fields
@@ -112,19 +91,18 @@ export const createEvent = async (req, res) => {
       activityLabel: activityLabel || 'Which aspect would you like to rate?',
       feedbackLabel: feedbackLabel || 'Share your thoughts',
       feedbackPlaceholder: feedbackPlaceholder || 'Tell us about your experience...',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      isCustom: isCustom !== false // Default to true unless explicitly set to false
     };
 
-    // Save to Firebase
-    const result = await dbService.save('events', eventData);
+    // Save to MySQL
+    const result = await dbService.saveEvent(eventData);
 
     res.status(201).json({
       success: true,
       message: 'Event created successfully',
       data: {
         ...eventData,
-        firebaseId: result.id
+        id: result.id
       }
     });
 
@@ -144,21 +122,8 @@ export const updateEvent = async (req, res) => {
     const { id } = req.params;
     const updates = req.body;
 
-    // Get existing event to preserve data
-    const events = await dbService.get('events');
-    let firebaseId = null;
-    let existingEvent = null;
-
-    // Find event by Firebase ID or event.id
-    if (events[id]) {
-      firebaseId = id;
-      existingEvent = events[id];
-    } else {
-      const eventEntry = Object.entries(events).find(([, data]) => data.id === id);
-      if (eventEntry) {
-        [firebaseId, existingEvent] = eventEntry;
-      }
-    }
+    // Get existing event to check if it exists
+    const existingEvent = await dbService.getEvent(id);
 
     if (!existingEvent) {
       return res.status(404).json({
@@ -171,24 +136,21 @@ export const updateEvent = async (req, res) => {
     const updatedEvent = {
       ...existingEvent,
       ...updates,
-      updatedAt: new Date().toISOString()
+      id: existingEvent.id // Keep original ID
     };
 
-    // If title changed, update ID
+    // If title changed, generate new ID
     if (updates.title && updates.title !== existingEvent.title) {
       updatedEvent.id = updates.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
     }
 
     // Save updates
-    await dbService.save(`events/${firebaseId}`, updatedEvent);
+    const result = await dbService.saveEvent(updatedEvent);
 
     res.json({
       success: true,
       message: 'Event updated successfully',
-      data: {
-        ...updatedEvent,
-        firebaseId
-      }
+      data: await dbService.getEvent(updatedEvent.id)
     });
 
   } catch (error) {
@@ -206,35 +168,18 @@ export const deleteEvent = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Get existing event to confirm it exists
-    const events = await dbService.get('events');
-    let firebaseId = null;
+    // Check if event exists
+    const existingEvent = await dbService.getEvent(id);
 
-    // Find event by Firebase ID or event.id
-    if (events[id]) {
-      firebaseId = id;
-    } else {
-      const eventEntry = Object.entries(events).find(([, data]) => data.id === id);
-      if (eventEntry) {
-        [firebaseId] = eventEntry;
-      }
-    }
-
-    if (!firebaseId) {
+    if (!existingEvent) {
       return res.status(404).json({
         success: false,
         error: 'Event not found'
       });
     }
 
-    // Delete the event
-    await dbService.delete(`events/${firebaseId}`);
-
-    // Also delete all associated feedback
-    const feedback = await dbService.get(`events/${firebaseId}/feedback`);
-    if (feedback && Object.keys(feedback).length > 0) {
-      await dbService.delete(`events/${firebaseId}/feedback`);
-    }
+    // Delete the event (CASCADE will delete associated feedback)
+    await dbService.deleteEvent(id);
 
     res.json({
       success: true,
