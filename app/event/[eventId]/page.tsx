@@ -380,15 +380,6 @@ const UniversalFeedbackForm = ({ params }: EventPageProps) => {
             )}
           </form>
         )}
-
-        <div className="mt-8 text-center">
-          <Link 
-            href="/admin"
-            className="text-sm text-gray-400 hover:text-gray-300 transition-colors"
-          >
-            ← Back to Admin Dashboard
-          </Link>
-        </div>
       </div>
     </div>
   );
