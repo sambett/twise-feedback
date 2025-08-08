@@ -1,209 +1,210 @@
 # 🚀 TWISE Universal Feedback Platform
 
-> **Migration Complete**: Successfully migrated from Firebase to MySQL local database
+> **Hackathon Project** - Privacy-first local feedback system for small events with real AI sentiment analysis
 
-A powerful, AI-enhanced feedback collection platform with real-time analytics and sentiment analysis. Built with Next.js frontend and Express.js backend, powered by local MySQL database.
+A quick-built but powerful feedback collection platform that runs **100% locally** - perfect for small events, conferences, or workshops that need private feedback collection without cloud dependencies.
 
-## 🎯 Quick Start
+![Status](https://img.shields.io/badge/Status-Hackathon%20MVP-yellow)
+![Privacy](https://img.shields.io/badge/Privacy-100%25%20Local-green)
+![AI](https://img.shields.io/badge/AI-DistilBERT-blue)
 
-### Option 1: Easy Launch (Recommended)
-1. **Double-click** `run_full_stack.bat` - This will:
-   - Check database connection
-   - Install dependencies
-   - Start both frontend and backend
-   - Open your browser automatically
+## ⚡ Quick Start
 
-### Option 2: Manual Setup
-1. **Setup Database**: Double-click `setup_database.bat`
-2. **Run Application**: Double-click `run_full_stack.bat`
-
-## 📋 Prerequisites
-
-- **MySQL Server** (running on localhost:3306)
-  - XAMPP, WAMP, or standalone MySQL
-  - MySQL91 service should be running
-- **Node.js** 20+ and npm 10+
-- **Database Credentials** in `backend/.env.local`:
-  ```env
-  DB_HOST=localhost
-  DB_PORT=3306
-  DB_USER=root
-  DB_PASSWORD=''
-  DB_NAME=twise_feedback
-  ```
-
-## 🗄️ Database Setup
-
-The platform uses **MySQL database** with the following structure:
-
-### Events Table
-- `id` (VARCHAR) - Primary key
-- `title`, `subtitle` - Event information
-- `activities` (JSON) - Available activity options
-- `theme` (JSON) - Custom styling
-- `activity_label`, `feedback_label`, `feedback_placeholder` - Custom labels
-- `is_custom` (BOOLEAN) - Whether event is user-created
-- Timestamps: `created_at`, `updated_at`
-
-### Feedback Table
-- `id` (AUTO_INCREMENT) - Primary key
-- `feedback_id` (VARCHAR) - Unique identifier
-- `event_id` (VARCHAR) - Foreign key to events
-- `star_rating` (1-5) - Rating score
-- `activity` - Selected activity
-- `comment` - User feedback text
-- `user_name`, `user_email` - Optional user info
-- **AI Fields**: `sentiment`, `sentiment_score`, `sentiment_confidence`, `language`
-- `processing_time` - AI processing duration
-- `timestamp` - When feedback was submitted
-
-## 🔧 Available Scripts
-
-### Backend Scripts (in `backend/` folder)
 ```bash
-npm run dev              # Start development server
-npm run setup-db         # Create database and tables
-npm run test-db          # Test database connection
-npm run demo-data        # Generate sample feedback data
-npm run verify-setup     # Full database verification
+# 1. One-click setup (Windows)
+double-click: setup_database.bat → option 4
+double-click: run_full_stack.bat
+
+# 2. Manual setup
+npm run full:install
+npm run backend:setup
+npm run full:dev
+
+# 3. Visit
+http://localhost:3000/admin  # Create events
+http://localhost:3000/event/twise-night  # Test feedback form
 ```
 
-### Frontend Scripts (in main folder)
-```bash
-npm run dev              # Start Next.js development server
-npm run full:dev         # Start both frontend and backend
-npm run backend:dev      # Start only backend
-npm run backend:setup    # Setup backend database
+**Prerequisites:** MySQL (XAMPP/WAMP), Node.js 20+, 4GB RAM
+
+## 🎯 What This Does
+
+✅ **Create feedback forms** with custom themes and activities  
+✅ **Collect 5-star ratings + comments** from event participants  
+✅ **Real-time AI sentiment analysis** (positive/negative/neutral)  
+✅ **Live analytics dashboard** with charts and insights  
+✅ **QR code generation** for easy sharing  
+✅ **100% private** - no data leaves your machine  
+
+Perfect for: Research conferences, workshops, small events, internal feedback
+
+## 🚨 Known Issues & Call for Help
+
+### **🆘 Need Contributors!**
+
+**🌍 Multilingual Problem**
+```
+Current: Claims multilingual but uses English-only model
+Reality: Poor accuracy for non-English text (French, Spanish, etc.)
+Need Help: Switch to multilingual BERT model or implement proper language detection
 ```
 
-### Batch Files (Windows)
-- `run_full_stack.bat` - Start complete application
-- `setup_database.bat` - Database setup wizard
-- `backend/run_local.bat` - Backend only with DB check
+**😐 Neutral Sentiment Detection Sucks**
+```
+Problem: "it was alright" → POSITIVE (99.97% confidence) 
+Cause: Binary model forced into 3 classes with bad threshold
+Need Help: Better neutral detection algorithm or confidence tuning
+```
 
-## 🌐 Application URLs
+**💡 Want to Help?**
+- Fix multilingual sentiment analysis
+- Improve neutral class detection  
+- Add more languages
+- Better error handling
+- Performance optimizations
 
-Once running, access these endpoints:
+## 🗄️ Database Schema
 
-- **🏠 Main App**: http://localhost:3000
-- **👑 Admin Dashboard**: http://localhost:3000/admin
-- **📊 Backend API**: http://localhost:3001
-- **❤️ Health Check**: http://localhost:3001/health
-- **📚 API Documentation**: http://localhost:3001/api
+```sql
+-- Events table
+CREATE TABLE events (
+    id VARCHAR(255) PRIMARY KEY,
+    title VARCHAR(500) NOT NULL,
+    activities JSON,  -- ["Workshop", "Demo", "Networking"]
+    theme JSON,       -- Color schemes
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
-### Example Event URLs
-- **TWISE Event**: http://localhost:3000/event/twise-night
-- **Sample Event**: http://localhost:3000/event/sample-research-event
-
-## 🎮 Key Features
-
-### ✅ **Already Working**
-- ✅ **MySQL Database**: Local persistent storage
-- ✅ **Event Management**: Create, edit, delete custom events
-- ✅ **Feedback Collection**: Star ratings + comments
-- ✅ **Local AI Sentiment Analysis**: No API keys required
-- ✅ **Real-time Analytics**: Live dashboard updates
-- ✅ **Multi-language Support**: Auto-detect language
-- ✅ **QR Code Generation**: For easy event sharing
-- ✅ **Responsive Design**: Works on all devices
-- ✅ **Custom Themes**: Multiple color schemes
-
-### 🔥 **AI Powered**
-- **Sentiment Analysis**: Automatic positive/neutral/negative detection
-- **Confidence Scoring**: AI confidence levels for each analysis
-- **Language Detection**: Supports 12+ languages
-- **Processing Metrics**: Track AI performance
-
-### 📊 **Analytics Dashboard**
-- **Real-time Updates**: Live feedback streaming
-- **Sentiment Breakdown**: Visual sentiment distribution
-- **Activity Analysis**: Performance by activity type
-- **Rating Distribution**: Star rating analytics
-- **Time-based Trends**: 24h/7d/30d analysis
-
-## 🛠️ Troubleshooting
-
-### Database Connection Issues
-1. **Check MySQL Service**:
-   ```cmd
-   net start MySQL91
-   ```
-
-2. **Verify Credentials**: Check `backend/.env.local`
-
-3. **Test Connection**:
-   ```cmd
-   cd backend
-   node test-database.js
-   ```
-
-### Common Solutions
-- **Port Conflicts**: Change ports in `.env.local`
-- **Missing Tables**: Run `npm run setup-db`
-- **No Demo Data**: Run `npm run demo-data`
-- **CORS Issues**: Check `CORS_ORIGIN` in backend `.env.local`
+-- Feedback table with AI analysis
+CREATE TABLE feedback (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    event_id VARCHAR(255) NOT NULL,
+    star_rating INT CHECK (star_rating BETWEEN 1 AND 5),
+    activity VARCHAR(500) NOT NULL,
+    comment TEXT,
+    sentiment ENUM('positive', 'negative', 'neutral'),
+    sentiment_score DECIMAL(3,2),    -- 0.0 to 1.0
+    sentiment_confidence DECIMAL(3,2), -- AI confidence
+    language VARCHAR(10) DEFAULT 'en',
+    processing_time INT,  -- AI processing time in ms
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (event_id) REFERENCES events(id)
+);
+```
 
 ## 📁 Project Structure
 
 ```
 twise/
 ├── app/                    # Next.js frontend
-│   ├── admin/             # Admin dashboard pages
-│   ├── event/[eventId]/   # Public feedback forms
-│   ├── lib/               # API client and utilities
-│   └── components/        # React components
-├── backend/               # Express.js backend
-│   ├── config/           # Database configuration
+│   ├── admin/             # Event management dashboard
+│   ├── event/[id]/        # Public feedback forms  
+│   └── lib/               # API client
+├── backend/               # Express.js API
+│   ├── config/           # Database connection
 │   ├── routes/           # API endpoints
-│   ├── services/         # Business logic (AI, etc.)
-│   ├── init.sql          # Database setup script
-│   ├── setup-database.js # Database initialization
-│   ├── test-database.js  # Connection testing
-│   └── generate-demo-data.js # Sample data generator
-├── run_full_stack.bat    # Main launcher
-├── setup_database.bat    # Database setup wizard
-└── README.md
+│   ├── services/         # AI sentiment analysis
+│   ├── cache/Xenova/     # AI model files (~250MB)
+│   ├── .env.local        # Database credentials
+│   └── init.sql          # Database setup script
+├── run_full_stack.bat    # Start everything
+└── setup_database.bat    # Database wizard
 ```
 
-## 🔄 Migration Notes
+## 🛠️ API Endpoints
 
-### ✅ **Successfully Migrated from Firebase**
-- **Database**: Firebase Realtime DB → MySQL
-- **Authentication**: Removed (using local-only setup)
-- **Hosting**: Firebase Hosting → Local development
-- **Data Structure**: Preserved event and feedback schemas
-- **Analytics**: Enhanced with SQL-based analytics
+### **Core APIs**
+```
+GET    /api/events              # List events
+POST   /api/events              # Create event  
+GET    /api/events/:id          # Get event details
 
-### 🗑️ **Removed Firebase Dependencies**
-- Cleaned up all Firebase imports and configurations
-- Removed Firebase SDK dependencies
-- Updated TypeScript interfaces
-- Replaced Firebase demo data with MySQL version
+POST   /api/feedback            # Submit feedback (with AI analysis)
+GET    /api/feedback            # Get feedback with filters
+GET    /api/feedback/stats      # Statistics
 
-## 🚀 Production Deployment
+GET    /api/analytics/:eventId  # Event analytics
+POST   /api/sentiment/test      # Test AI sentiment analysis
+```
 
-When ready for production:
+### **System APIs**
+```
+GET    /health                  # System status
+GET    /api                     # API documentation
+GET    /api/metrics             # Performance metrics
+```
 
-1. **Database**: Set up MySQL on production server
-2. **Environment**: Update backend `.env.local` with production credentials
-3. **Build**: Run `npm run build` in main folder
-4. **Deploy**: Use PM2, Docker, or your preferred deployment method
+## 🤖 AI Details
 
-## 📞 Support
+**Current Model:** `distilbert-base-uncased-finetuned-sst-2-english`
+- **Size:** 250MB, 67M parameters  
+- **Speed:** ~35ms processing time
+- **Training:** English movie reviews (Stanford Sentiment Treebank)
+- **Output:** Binary (POSITIVE/NEGATIVE) → converted to 3-class
+- **Accuracy:** Good for English positive/negative, poor for neutral
 
-### 🛠️ **For Issues**
-1. Check database connection: `npm run test-db`
-2. Verify setup: `npm run verify-setup`
-3. Review logs in terminal output
-4. Check MySQL service status
+**Alternative Model Available:** `bert-base-multilingual-uncased-sentiment` (cached but not used)
 
-### 🎯 **For Development**
-- Backend API docs: http://localhost:3001/api
-- Health monitoring: http://localhost:3001/health
-- Metrics: http://localhost:3001/api/metrics
+## 🐛 Environment Setup
+
+```env
+# backend/.env.local
+DB_HOST=localhost
+DB_PORT=3306  
+DB_USER=root
+DB_PASSWORD=          # Empty for XAMPP default
+DB_NAME=twise_feedback
+PORT=3001
+```
+
+## 🔧 Troubleshooting
+
+```bash
+# Database issues
+cd backend && node test-database.js
+
+# AI model issues  
+rm -rf backend/cache/Xenova  # Clear model cache
+
+# Start MySQL (Windows)
+net start MySQL91
+
+# Check everything works
+curl http://localhost:3001/health
+```
+
+## 📊 Example Usage
+
+**Create Event:**
+```bash
+curl -X POST http://localhost:3001/api/events \
+  -H "Content-Type: application/json" \
+  -d '{"title":"My Workshop","activities":["Demo","Q&A"]}'
+```
+
+**Test AI Sentiment:**
+```bash
+curl -X POST http://localhost:3001/api/sentiment/test \
+  -H "Content-Type: application/json" \
+  -d '{"text":"This workshop was amazing!"}'
+```
+
+## ⚡ What Makes This Special
+
+- **🔒 Privacy-First:** No cloud, no tracking, no external APIs
+- **🤖 Real AI:** Actual Transformer model, not rules
+- **⚡ Fast:** Real-time sentiment analysis in ~35ms  
+- **📱 Modern UI:** Clean, responsive, QR codes
+- **📊 Live Analytics:** Real-time dashboard updates
+
+## 🎭 Built During Hackathon
+
+This was crafted quickly during a hackathon to solve a real problem: **small events needing private, local feedback collection**. While it has some rough edges (multilingual support, neutral detection), it provides a solid foundation and **actually works** for English-language events.
+
+**Perfect for:** Research conferences, internal workshops, small events where privacy matters and cloud solutions are overkill.
 
 ---
 
-**🎉 Ready to collect feedback with AI-powered insights!**
+**🆘 Want to improve this? PRs welcome!** Especially for multilingual support and neutral sentiment detection.
 
-> **Note**: This is a complete, working application with local MySQL database. No external APIs or Firebase accounts required.
+**🎉 Ready to collect feedback privately!**
